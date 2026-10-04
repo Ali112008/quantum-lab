@@ -262,3 +262,242 @@ export const cloneState = (s: QubitState): QubitState => ({
   a: { ...s.a },
   b: { ...s.b },
 });
+
+/* ================================================================== */
+/*                                                                    */
+/*                    T W O - Q U B I T   E N G I N E                 */
+/*                                                                    */
+/*  Entanglement is the whole pitch — "15 students in one wave-       */
+/*  function" — so the playground grows a second qubit and the gate   */
+/*  that makes quantum computing *quantum*: CNOT. Two qubits need     */
+/*  four amplitudes (2² = 4) and 4×4 unitaries, but the same linear   */
+/*  algebra carries us: no new machinery, just a tensor product.      */
+/*                                                                    */
+/*  Indexing convention: amps[q0 + 2·q1] — q0 is the least            */
+/*  significant bit, exactly Qiskit's little-endian. Ket labels are   */
+/*  written |q1 q0⟩, so the top wire (q0) is the right-hand digit.    */
+/*                                                                    */
+/* ================================================================== */
+
+/**
+ * A pure two-qubit state |Ψ⟩ = Σ cᵢ|i⟩ over the computational basis
+ * {|00⟩, |01⟩, |10⟩, |11⟩}.
+ */
+export interface TwoQubitState {
+  /** amps[q0 + 2·q1] — little-endian, matching Qiskit. */
+  amps: [Complex, Complex, Complex, Complex];
+}
+
+/** The two-qubit ground state |00⟩ — where every entangling story starts. */
+export const TWO_ZERO_STATE: TwoQubitState = {
+  amps: [c(1), c(0), c(0), c(0)],
+};
+
+/** Ket label for basis index i, in Qiskit order |q1 q0⟩. */
+export const ketLabel = (i: number): string => `|${i >> 1}${i & 1}⟩`;
+
+/** Renormalize away floating-point drift (unitarity is still our safety net). */
+function normalize2(amps: TwoQubitState["amps"]): TwoQubitState {
+  const norm = Math.sqrt(amps.reduce((acc, z) => acc + cabsSq(z), 0));
+  return {
+    amps: amps.map((z) => ({
+      re: clean(z.re / norm),
+      im: clean(z.im / norm),
+    })) as TwoQubitState["amps"],
+  };
+}
+
+/**
+ * Apply a single-qubit gate to ONE wire of the pair:
+ * the 2×2 gate becomes a 4×4 unitary via the tensor product
+ * (U ⊗ I for target q0, I ⊗ U for target q1) — but we never build
+ * the big matrix, we just pair up the amplitudes it mixes.
+ */
+export function applySingleToWire(
+  s: TwoQubitState,
+  gate: Matrix2,
+  target: 0 | 1
+): TwoQubitState {
+  const amps = s.amps.map((z) => ({ ...z })) as TwoQubitState["amps"];
+  // Indices of the |0⟩ and |1⟩ branches of the target wire.
+  const zeroIdx = target === 0 ? [0, 2] : [0, 1];
+  const oneIdx = target === 0 ? [1, 3] : [2, 3];
+  for (let k = 0; k < 2; k++) {
+    const a = amps[zeroIdx[k]];
+    const b = amps[oneIdx[k]];
+    amps[zeroIdx[k]] = cadd(cmul(gate[0][0], a), cmul(gate[0][1], b));
+    amps[oneIdx[k]] = cadd(cmul(gate[1][0], a), cmul(gate[1][1], b));
+  }
+  return normalize2(amps);
+}
+
+/**
+ * CNOT — the entangling gate.
+ * Flips the target qubit IFF the control reads 1: in amplitude-space
+ * that is a swap of exactly two basis amplitudes.
+ *   control q0 → swaps |01⟩ (1) ↔ |11⟩ (3)
+ *   control q1 → swaps |10⟩ (2) ↔ |11⟩ (3)
+ * One controlled flip is all it takes to turn product states into
+ * Bell states. That asymmetry is why hardware teams obsess over
+ * two-qubit gate fidelity.
+ */
+export function applyCNOT(s: TwoQubitState, control: 0 | 1): TwoQubitState {
+  const amps = s.amps.map((z) => ({ ...z })) as TwoQubitState["amps"];
+  // The amplitude that gets swapped with |11⟩ (index 3):
+  //   control q0 → |01⟩ (1),  control q1 → |10⟩ (2)
+  const from = control === 0 ? 1 : 2;
+  const to = 3;
+  const tmp = { ...amps[from] };
+  amps[from] = { ...amps[to] };
+  amps[to] = tmp;
+  return normalize2(amps);
+}
+
+/** Born rule over the joint basis: P(i) = |cᵢ|². */
+export function twoProbabilities(s: TwoQubitState): [number, number, number, number] {
+  return s.amps.map(cabsSq) as [number, number, number, number];
+}
+
+/** Sample one projective measurement of BOTH qubits (destructive). */
+export function sampleTwoOnce(s: TwoQubitState): 0 | 1 | 2 | 3 {
+  const p = twoProbabilities(s);
+  const r = Math.random();
+  let acc = 0;
+  for (let i = 0; i < 4; i++) {
+    acc += p[i];
+    if (r < acc) return i as 0 | 1 | 2 | 3;
+  }
+  return 3;
+}
+
+/** Collapse to a definite basis state after measurement. */
+export function collapseTwo(i: 0 | 1 | 2 | 3): TwoQubitState {
+  const amps = [c(0), c(0), c(0), c(0)] as TwoQubitState["amps"];
+  amps[i] = c(1);
+  return { amps };
+}
+
+/**
+ * Concurrence C ∈ [0,1] — the entanglement meter for pure states:
+ *   C = 2·|c₀c₃ − c₁c₂|
+ * C = 0 for product states, C = 1 for the four maximally-entangled
+ * Bell states. (For mixed states this generalizes via the Wootters
+ * formula; our simulator only ever holds pure states.)
+ */
+export function concurrence(s: TwoQubitState): number {
+  const [a, b, c2, d] = s.amps;
+  // det = c₀c₃ − c₁c₂  (the “entanglement determinant”)
+  const det = cadd(cmul(a, d), cmul(mulNeg(b), c2));
+  return clean(2 * Math.hypot(det.re, det.im));
+}
+
+/** Helper: multiply a complex number by −1. */
+function mulNeg(z: Complex): Complex {
+  return { re: -z.re, im: -z.im };
+}
+
+/**
+ * Bloch vector of ONE qubit's reduced density matrix (trace out the other).
+ *   ρ_q0 = [[|c₀|²+|c₁|², c₀c̄₂+c₁c̄₃], …]
+ * For a Bell pair both reduced states collapse to ½I — the Bloch vector
+ * shrinks to the origin: each qubit alone is pure noise, all the
+ * information lives in the correlation. That is the quantum magic in
+ * one picture.
+ */
+export function reducedBloch(s: TwoQubitState, qubit: 0 | 1) {
+  const [c0, c1, c2, c3] = s.amps;
+  // ρ01 = ⟨0|ρ|1⟩ of the reduced state (conjugation handled inline).
+  const rho01 =
+    qubit === 0
+      ? cadd(cmul(c0, conj(c2)), cmul(c1, conj(c3)))
+      : cadd(cmul(c0, conj(c1)), cmul(c2, conj(c3)));
+  const rho00 =
+    qubit === 0 ? cabsSq(c0) + cabsSq(c1) : cabsSq(c0) + cabsSq(c2);
+  const rho11 =
+    qubit === 0 ? cabsSq(c2) + cabsSq(c3) : cabsSq(c1) + cabsSq(c3);
+  return {
+    x: clean(2 * rho01.re),
+    y: clean(-2 * rho01.im),
+    z: clean(rho00 - rho11),
+  };
+}
+
+/** Complex conjugate. */
+function conj(z: Complex): Complex {
+  return { re: z.re, im: -z.im };
+}
+
+/* ------------------------------------------------------------------ */
+/*                     Two-qubit circuit + presets                     */
+/* ------------------------------------------------------------------ */
+
+/** One column of the two-lane circuit diagram. */
+export type TwoQubitOp =
+  | { kind: "gate"; symbol: string; target: 0 | 1 }
+  | { kind: "cnot"; control: 0 | 1 };
+
+/** A preset two-qubit state with a one-line bilingual story. */
+export interface TwoPresetDef {
+  label: string;
+  state: TwoQubitState;
+  note: L10n;
+}
+
+const INV_SQRT2_2 = INV_SQRT2;
+
+/** Famous pairs — product states plus the full Bell family. */
+export const TWO_PRESETS: TwoPresetDef[] = [
+  {
+    label: "|00⟩",
+    state: TWO_ZERO_STATE,
+    note: {
+      en: "Two independent qubits at rest — nothing entangled yet.",
+      ar: "كيوبتان مستقلان في حالة السكون — لا تشابك بعد.",
+    },
+  },
+  {
+    label: "|11⟩",
+    state: { amps: [c(0), c(0), c(0), c(1)] },
+    note: {
+      en: "Both qubits excited — still a plain product state.",
+      ar: "كيوبتان مثيران — ما زالا حالة حاصل ضرب مباشرة.",
+    },
+  },
+  {
+    label: "Φ⁺",
+    state: { amps: [c(INV_SQRT2_2), c(0), c(0), c(INV_SQRT2_2)] },
+    note: {
+      en: "Bell Φ⁺ = (|00⟩+|11⟩)/√2 — measure one qubit and you instantly know the other. Einstein's “spooky action”, now a resource.",
+      ar: "حالة بِل Φ⁺ = (|00⟩+|11⟩)/√2 — قِس كيوبتًا واحدًا لتعرف الآخر فورًا. «الفعل الشيطاني» عند أينشتاين، صار اليوم موردًا تقنيًا.",
+    },
+  },
+  {
+    label: "Φ⁻",
+    state: { amps: [c(INV_SQRT2_2), c(0), c(0), c(-INV_SQRT2_2)] },
+    note: {
+      en: "Bell Φ⁻ — same perfect correlation, opposite phase. The phase difference only shows up in interference.",
+      ar: "حالة بِل Φ⁻ — الارتباط الكامل نفسه بطور معاكس. يظهر فرق الطور في التداخل فقط.",
+    },
+  },
+  {
+    label: "Ψ⁺",
+    state: { amps: [c(0), c(INV_SQRT2_2), c(INV_SQRT2_2), c(0)] },
+    note: {
+      en: "Bell Ψ⁺ = (|01⟩+|10⟩)/√2 — anti-correlated twin states, the basis of quantum teleportation demos.",
+      ar: "حالة بِل Ψ⁺ = (|01⟩+|10⟩)/√2 — حالتان توأم متعاكسان، أساس تجارب النقل الكمومي.",
+    },
+  },
+  {
+    label: "Ψ⁻",
+    state: { amps: [c(0), c(INV_SQRT2_2), c(-INV_SQRT2_2), c(0)] },
+    note: {
+      en: "Bell Ψ⁻ — the singlet. Perfectly anti-correlated on EVERY axis; the workhorse of CHSH loophole tests.",
+      ar: "حالة بِل Ψ⁻ — الحالة الأحادية. تعاكس تام على كل محور؛ حصان العمل في اختبارات CHSH.",
+    },
+  },
+];
+
+/** Deep-copy a two-qubit state for the undo stack. */
+export const cloneTwoState = (s: TwoQubitState): TwoQubitState => ({
+  amps: s.amps.map((z) => ({ ...z })) as TwoQubitState["amps"],
+});

@@ -104,6 +104,39 @@ export interface Copy {
     pedagogyPre: string;
     pedagogyAccent: string;
     pedagogyPost: string;
+    modeAria: string;
+    modeSingle: string;
+    modeEntangled: string;
+  };
+  twoQubit: {
+    spheresTitle: string;
+    wireHint: string;
+    qubitLabel: (n: number) => string;
+    jointTitle: string;
+    endianNote: string;
+    meterLabel: string;
+    meterLeft: string;
+    meterRight: string;
+    meterAria: (c: number) => string;
+    bellBadge: string;
+    bellNote: string;
+    gates2Title: string;
+    gates2Hint: string;
+    opAria: (name: string) => string;
+    blurbH: (n: number) => string;
+    blurbX: (n: number) => string;
+    blurbCnot: (ctrl: number, tgt: number) => string;
+    circuit2Title: string;
+    emptyCircuit2: string;
+    presets2Title: string;
+    preset2Aria: (label: string) => string;
+    recipeLabel: string;
+    recipe: string;
+    shotsSummary2: (summary: string) => string;
+    pedagogy2Pre: string;
+    pedagogy2Accent: string;
+    pedagogy2Post: string;
+    reducedAria: (n: number) => string;
   };
   budget: {
     askEyebrow: string;
@@ -368,7 +401,7 @@ const en: Copy = {
     eyebrow: "SECTION 04 — TRY QUANTUM",
     title: "Play With A Real Qubit",
     subtitle:
-      "Not a video — a live single-qubit simulator running in your browser, on the same math our students master in Phase 1. Apply gates, watch the Bloch sphere, then measure. Go collapse something.",
+      "Not a video — a live simulator running in your browser, on the same math our students master in Phase 1. Start with one qubit, then entangle a pair. Apply gates, watch the Bloch sphere, measure. Go collapse something.",
     blochAria: "Bloch disc showing the current qubit state",
     phaseLabel: "RELATIVE PHASE φ",
     stateLabel: "STATE VECTOR",
@@ -394,6 +427,46 @@ const en: Copy = {
     pedagogyAccent: "Phase-1 training engine",
     pedagogyPost:
       " — the same linear algebra as Qiskit's Statevector, shrunk into a browser tab. Fund the lab and 200 students will run it on real IBM Quantum hardware.",
+    modeAria: "Simulator mode",
+    modeSingle: "Single qubit",
+    modeEntangled: "Entangled pair",
+  },
+  twoQubit: {
+    spheresTitle: "Reduced states",
+    wireHint: "Each sphere shows one qubit alone — trace out its partner.",
+    qubitLabel: (n) => `q${n} · ${n === 0 ? "top" : "bottom"} wire`,
+    jointTitle: "Joint probabilities",
+    endianNote:
+      "Bit order follows Qiskit's little-endian: |q₁ q₀⟩ — the top wire is the right-hand digit.",
+    meterLabel: "ENTANGLEMENT",
+    meterLeft: "separable",
+    meterRight: "maximal",
+    meterAria: (c) => `Entanglement meter at ${(c * 100).toFixed(0)} percent of maximal`,
+    bellBadge: "BELL PAIR ACHIEVED",
+    bellNote:
+      "Each qubit alone is now pure noise — the vectors shrank to the center. Every bit of information lives in the correlation. That is entanglement.",
+    gates2Title: "Two-qubit gate rack",
+    gates2Hint: "H and X act on one wire — ⊕ (CNOT) entangles the pair.",
+    opAria: (name) => `Apply ${name}`,
+    blurbH: (n) =>
+      `Hadamard on qubit ${n} — puts that wire alone into superposition. The pair is still separable… until CNOT.`,
+    blurbX: (n) => `Pauli-X on qubit ${n} — flips that wire's |0⟩↔|1⟩.`,
+    blurbCnot: (ctrl, tgt) =>
+      `CNOT — if qubit ${ctrl} reads 1, flip qubit ${tgt}. THE entangling gate: one controlled flip turns product states into Bell states.`,
+    circuit2Title: "Entangling circuit",
+    emptyCircuit2: "─ lanes idle · apply a gate ─",
+    presets2Title: "Famous pairs",
+    preset2Aria: (label) => `Load the two-qubit state ${label}`,
+    recipeLabel: "BELL RECIPE",
+    recipe: "H on q0 → CNOT 0→1 → Φ⁺",
+    collapsedTo2: (o) =>
+      `Measured ${o} — both qubits collapsed together. Undo restores the entanglement.`,
+    shotsSummary2: (summary) => `${summary} — out of 100 shots`,
+    pedagogy2Pre: "This is the ",
+    pedagogy2Accent: "Phase-2 research bench",
+    pedagogy2Post:
+      " — Bell states power quantum teleportation, QKD security proofs, and the CHSH experiments our students will run on real hardware. You just built one in a browser tab.",
+    reducedAria: (n) => `Bloch disc of qubit ${n}'s reduced state`,
   },
   budget: {
     askEyebrow: "The Ask",
@@ -696,7 +769,7 @@ const ar: Copy = {
     eyebrow: "القسم 04 — جرّب الكم",
     title: "جرّب كيوبيتًا حقيقيًا",
     subtitle:
-      "ليست مقطعًا مرئيًا — إنها محاكاة حية لكيوبيت واحد تعمل في متصفحك، بالرياضيات نفسها التي يتقنها طلابنا في المرحلة الأولى. طبّق البوابات، راقب كرة بلوخ، ثم قِس. أسقِط شيئًا ما.",
+      "ليست مقطعًا مرئيًا — إنها محاكاة حية تعمل في متصفحك، بالرياضيات نفسها التي يتقنها طلابنا في المرحلة الأولى. ابدأ بكيوبيت واحد، ثم متشابك زوجًا. طبّق البوابات، راقب كرة بلوخ، ثم قِس. أسقِط شيئًا ما.",
     blochAria: "قرص بلوخ يعرض حالة الكيوبيت الحالية",
     phaseLabel: "الطور النسبي φ",
     stateLabel: "متجه الحالة",
@@ -722,6 +795,46 @@ const ar: Copy = {
     pedagogyAccent: "محرك تدريب المرحلة الأولى",
     pedagogyPost:
       " — نفس الجبر الخطي في Statevector من Qiskit، مضغوط في تبويب متصفح. موّل المختبر ليشغّلها 200 طالب على عتاد IBM Quantum الحقيقي.",
+    modeAria: "وضع المحاكاة",
+    modeSingle: "كيوبيت واحد",
+    modeEntangled: "زوج متشابك",
+  },
+  twoQubit: {
+    spheresTitle: "الحالات المختزلة",
+    wireHint: "كل كرة تُظهر كيوبتًا واحدًا وحده — بعد استبعاد شريكه.",
+    qubitLabel: (n) => `q${n} · ${n === 0 ? "السلك العلوي" : "السلك السفلي"}`,
+    jointTitle: "الاحتمالات المشتركة",
+    endianNote:
+      "ترتيب البتات يتبع اصطلاح Qiskit الشطر الأصغر: |q₁ q₀⟩ — السلك العلوي هو الرقم الأيمن.",
+    meterLabel: "التشابك",
+    meterLeft: "منفصلان",
+    meterRight: "أقصى تشابك",
+    meterAria: (c) => `مقياس التشابك عند ${(c * 100).toFixed(0)} بالمئة من الحد الأقصى`,
+    bellBadge: "زوج بِل تحقق!",
+    bellNote:
+      "كل كيوبت وحده صار ضجيجًا خالصًا — انكمشت المتجهات إلى المركز. كل المعلومات تسكن الارتباط المشترك. هذا هو التشابك.",
+    gates2Title: "رف بوابات الكيوبتين",
+    gates2Hint: "H و X يعملان على سلك واحد — ⊕ (CNOT) يُشابك الزوج.",
+    opAria: (name) => `تطبيق ${name}`,
+    blurbH: (n) =>
+      `هادامارد على الكيوبيت ${n} — يضع ذلك السلك وحده في تراكب. يبقى الزوج منفصلًا… حتى يأتي CNOT.`,
+    blurbX: (n) => `باولي-X على الكيوبيت ${n} — يقلب |0⟩↔|1⟩ في ذلك السلك.`,
+    blurbCnot: (ctrl, tgt) =>
+      `CNOT — إذا قرأ الكيوبيت ${ctrl} القيمة 1، يقلب الكيوبيت ${tgt}. بوابة التشابك الأولى: نقلة واحدة مُتحكَّم بها تحول حالات الضرب إلى حالات بِل.`,
+    circuit2Title: "دائرة التشابك",
+    emptyCircuit2: "─ المساران خاليان · طبّق بوابة ─",
+    presets2Title: "أزواج شهيرة",
+    preset2Aria: (label) => `تحميل الحالة ثنائية الكيوبيت ${label}`,
+    recipeLabel: "وصفة بِل",
+    recipe: "H على q0 ← CNOT 0→1 ← Φ⁺",
+    collapsedTo2: (o) =>
+      `النتيجة ${o} — انسحب الكيوبيتان معًا. «تراجع» يعيد التشابك.`,
+    shotsSummary2: (summary) => `${summary} — من أصل 100 قياس`,
+    pedagogy2Pre: "هذا ",
+    pedagogy2Accent: "مكتب أبحاث المرحلة الثانية",
+    pedagogy2Post:
+      " — حالات بِل تشغّل النقل الكمومي وإثباتات أمان QKD وتجارب CHSH التي سيجريها طلابنا على عتاد حقيقي. لقد بنتَ واحدةً للتو في تبويب متصفح.",
+    reducedAria: (n) => `قرص بلوخ للحالة المختزلة للكيوبيت ${n}`,
   },
   budget: {
     askEyebrow: "المطلوب",

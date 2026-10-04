@@ -10,9 +10,11 @@ import {
   CircuitBoard,
   Orbit,
   Atom,
+  Link2,
 } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
+import TwoQubitLab from "@/components/TwoQubitLab";
 import { useLang } from "@/lib/LanguageProvider";
 import { quantumVariants, staggerContainer, viewport } from "@/lib/animations";
 import {
@@ -34,10 +36,15 @@ import { Button } from "@/components/ui/button";
 /**
  * SECTION 04 — TRY QUANTUM · the interactive qubit playground.
  *
- * A real single-qubit engine (src/lib/quantum.ts) rendered three ways:
- * a Bloch disc, a probability meter, and a circuit wire. The pitch in
- * miniature: "quantum" is not hand-waving — it is this math, and our
- * students will run it on real hardware.
+ * Two benches in one lab:
+ *   - SINGLE: a real single-qubit engine (src/lib/quantum.ts) rendered
+ *     three ways — a Bloch disc, a probability meter, and a circuit wire.
+ *   - ENTANGLED: a two-qubit lab (TwoQubitLab) where H + CNOT builds a
+ *     Bell pair and the concurrence meter fills as both Bloch vectors
+ *     shrink to the center — entanglement made visible.
+ *
+ * The pitch in miniature: "quantum" is not hand-waving — it is this math,
+ * and our students will run it on real hardware.
  *
  * RTL note: physics notation (|0⟩, gate symbols, amplitudes) is pinned
  * dir="ltr" inside both languages; only surrounding chrome flips.
@@ -54,6 +61,9 @@ const CIRCUIT_WINDOW = 9;
 export default function Playground() {
   const { t, tx, isAr } = useLang();
   const pg = t.playground;
+
+  /** Which bench is lit: one qubit or an entangled pair. */
+  const [mode, setMode] = useState<"single" | "entangled">("single");
 
   const [state, setState] = useState<QubitState>(ZERO_STATE);
   const [circuit, setCircuit] = useState<string[]>([]);
@@ -166,13 +176,61 @@ export default function Playground() {
           subtitle={pg.subtitle}
         />
 
+        {/* ── Bench switch: one qubit vs an entangled pair ── */}
         <motion.div
-          variants={staggerContainer}
+          variants={quantumVariants}
           initial="hidden"
           whileInView="visible"
           viewport={viewport}
-          className="grid gap-6 lg:grid-cols-2"
+          className="mb-10 flex justify-center"
         >
+          <div
+            role="radiogroup"
+            aria-label={pg.modeAria}
+            className="relative flex rounded-full border border-white/10 bg-quantum-navy/70 p-1 shadow-[0_0_24px_rgba(0,217,255,0.08)] backdrop-blur"
+          >
+            {(["single", "entangled"] as const).map((m) => {
+              const active = mode === m;
+              const Icon = m === "single" ? Atom : Link2;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setMode(m)}
+                  className={`relative z-10 flex min-h-11 items-center gap-2 rounded-full px-4 py-2 font-heading text-sm font-bold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-quantum-blue sm:px-6 ${
+                    active
+                      ? "text-quantum-navy"
+                      : "text-quantum-subtle hover:text-white"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="playground-mode-pill"
+                      className="absolute inset-0 -z-10 rounded-full bg-quantum-blue shadow-[0_0_24px_rgba(0,217,255,0.45)]"
+                      transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                    />
+                  )}
+                  <Icon className="h-4 w-4" />
+                  {m === "single" ? pg.modeSingle : pg.modeEntangled}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          {mode === "single" ? (
+            <motion.div
+              key="single"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={viewport}
+              exit={{ opacity: 0, y: -16 }}
+              className="grid gap-6 lg:grid-cols-2"
+            >
           {/* ── Left: the Bloch disc + probability meter ── */}
           <QuantumCard accent="#00D9FF" noReveal className="p-6 md:p-8">
             <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
@@ -673,7 +731,19 @@ export default function Playground() {
               </p>
             </div>
           </motion.div>
-        </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="entangled"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
+              <TwoQubitLab />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );

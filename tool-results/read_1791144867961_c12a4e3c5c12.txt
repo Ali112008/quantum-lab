@@ -1,0 +1,681 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useCallback, useMemo, useState } from "react";
+     4→     4→import { AnimatePresence, motion } from "framer-motion";
+     5→     5→import {
+     6→     6→  RotateCcw,
+     7→     7→  Undo2,
+     8→     8→  Gauge,
+     9→     9→  Dices,
+    10→    10→  CircuitBoard,
+    11→    11→  Orbit,
+    12→    12→  Atom,
+    13→    13→} from "lucide-react";
+    14→    14→import SectionHeading from "@/components/ui/SectionHeading";
+    15→    15→import QuantumCard from "@/components/ui/QuantumCard";
+    16→    16→import { useLang } from "@/lib/LanguageProvider";
+    17→    17→import { quantumVariants, staggerContainer, viewport } from "@/lib/animations";
+    18→    18→import {
+    19→    19→  GATES,
+    20→    20→  PRESETS,
+    21→    21→  ZERO_STATE,
+    22→    22→  applyGate,
+    23→    23→  bloch,
+    24→    24→  cformat,
+    25→    25→  cloneState,
+    26→    26→  probabilities,
+    27→    27→  relativePhase,
+    28→    28→  sampleOnce,
+    29→    29→  type GateDef,
+    30→    30→  type QubitState,
+    31→    31→} from "@/lib/quantum";
+    32→    32→import { Button } from "@/components/ui/button";
+    33→    33→
+    34→    34→/**
+    35→    35→ * SECTION 04 — TRY QUANTUM · the interactive qubit playground.
+    36→    36→ *
+    37→    37→ * A real single-qubit engine (src/lib/quantum.ts) rendered three ways:
+    38→    38→ * a Bloch disc, a probability meter, and a circuit wire. The pitch in
+    39→    39→ * miniature: "quantum" is not hand-waving — it is this math, and our
+    40→    40→ * students will run it on real hardware.
+    41→    41→ *
+    42→    42→ * RTL note: physics notation (|0⟩, gate symbols, amplitudes) is pinned
+    43→    43→ * dir="ltr" inside both languages; only surrounding chrome flips.
+    44→    44→ */
+    45→    45→
+    46→    46→interface Snapshot {
+    47→    47→  state: QubitState;
+    48→    48→  circuit: string[];
+    49→    49→}
+    50→    50→
+    51→    51→const HISTORY_LIMIT = 32;
+    52→    52→const CIRCUIT_WINDOW = 9;
+    53→    53→
+    54→    54→export default function Playground() {
+    55→    55→  const { t, tx, isAr } = useLang();
+    56→    56→  const pg = t.playground;
+    57→    57→
+    58→    58→  const [state, setState] = useState<QubitState>(ZERO_STATE);
+    59→    59→  const [circuit, setCircuit] = useState<string[]>([]);
+    60→    60→  const [history, setHistory] = useState<Snapshot[]>([]);
+    61→    61→  const [flash, setFlash] = useState<0 | 1 | null>(null);
+    62→    62→  const [shots, setShots] = useState<{ zeros: number; ones: number } | null>(
+    63→    63→    null
+    64→    64→  );
+    65→    65→  const [liveMsg, setLiveMsg] = useState<string>("");
+    66→    66→  const [hoverGate, setHoverGate] = useState<GateDef | null>(null);
+    67→    67→
+    68→    68→  const { p0, p1 } = useMemo(() => probabilities(state), [state]);
+    69→    69→  const { x, z } = useMemo(() => bloch(state), [state]);
+    70→    70→  const phase = useMemo(() => relativePhase(state), [state]);
+    71→    71→
+    72→    72→  /** Push the current configuration onto the decoherence-proof undo stack. */
+    73→    73→  const snapshot = useCallback(() => {
+    74→    74→    setHistory((prev) => [
+    75→    75→      ...prev.slice(-HISTORY_LIMIT + 1),
+    76→    76→      { state: cloneState(state), circuit: [...circuit] },
+    77→    77→    ]);
+    78→    78→  }, [state, circuit]);
+    79→    79→
+    80→    80→  const applyOne = useCallback(
+    81→    81→    (gate: GateDef) => {
+    82→    82→      snapshot();
+    83→    83→      setState((prev) => applyGate(prev, gate.matrix));
+    84→    84→      setCircuit((prev) => [...prev, gate.symbol]);
+    85→    85→      setShots(null); // new state → old statistics no longer describe it
+    86→    86→      setFlash(null);
+    87→    87→    },
+    88→    88→    [snapshot]
+    89→    89→  );
+    90→    90→
+    91→    91→  const loadPreset = useCallback(
+    92→    92→    (presetState: QubitState) => {
+    93→    93→      snapshot();
+    94→    94→      setState(cloneState(presetState));
+    95→    95→      setCircuit([]);
+    96→    96→      setShots(null);
+    97→    97→      setFlash(null);
+    98→    98→    },
+    99→    99→    [snapshot]
+   100→   100→  );
+   101→   101→
+   102→   102→  const undo = useCallback(() => {
+   103→   103→    setHistory((prev) => {
+   104→   104→      if (prev.length === 0) return prev;
+   105→   105→      const last = prev[prev.length - 1];
+   106→   106→      setState(last.state);
+   107→   107→      setCircuit(last.circuit);
+   108→   108→      setShots(null);
+   109→   109→      setFlash(null);
+   110→   110→      return prev.slice(0, -1);
+   111→   111→    });
+   112→   112→  }, []);
+   113→   113→
+   114→   114→  const reset = useCallback(() => {
+   115→   115→    snapshot();
+   116→   116→    setState(ZERO_STATE);
+   117→   117→    setCircuit([]);
+   118→   118→    setShots(null);
+   119→   119→    setFlash(null);
+   120→   120→  }, [snapshot]);
+   121→   121→
+   122→   122→  /** Projective measurement in the computational basis — collapses ψ. */
+   123→   123→  const measureOnce = useCallback(() => {
+   124→   124→    snapshot();
+   125→   125→    const outcome = sampleOnce(state);
+   126→   126→    const collapsed: QubitState =
+   127→   127→      outcome === 0
+   128→   128→        ? { a: { re: 1, im: 0 }, b: { re: 0, im: 0 } }
+   129→   129→        : { a: { re: 0, im: 0 }, b: { re: 1, im: 0 } };
+   130→   130→    setState(collapsed);
+   131→   131→    setShots(null);
+   132→   132→    setFlash(outcome);
+   133→   133→    setLiveMsg(pg.collapsedTo(String(outcome)));
+   134→   134→  }, [state, snapshot, pg]);
+   135→   135→
+   136→   136→  /** Born-rule sampling ×100 — the state itself is left untouched. */
+   137→   137→  const runShots = useCallback(() => {
+   138→   138→    let zeros = 0;
+   139→   139→    for (let i = 0; i < 100; i++) if (sampleOnce(state) === 0) zeros++;
+   140→   140→    setShots({ zeros, ones: 100 - zeros });
+   141→   141→    setLiveMsg(pg.shotsSummary(zeros, 100 - zeros));
+   142→   142→  }, [state, pg]);
+   143→   143→
+   144→   144→  // Bloch disc geometry — a pure state always lies ON the sphere, so the
+   145→   145→  // vector length is constant and only its angle ever animates.
+   146→   146→  const R = 86;
+   147→   147→  const CX = 120;
+   148→   148→  const CY = 120;
+   149→   149→  const thetaDeg = (Math.atan2(x, z) * 180) / Math.PI;
+   150→   150→  const phaseDeg = (phase * 180) / Math.PI;
+   151→   151→  const hasB = p1 > 0.001;
+   152→   152→
+   153→   153→  const visibleChips = circuit.slice(-CIRCUIT_WINDOW);
+   154→   154→  const hiddenCount = circuit.length - visibleChips.length;
+   155→   155→
+   156→   156→  return (
+   157→   157→    <section
+   158→   158→      id="playground"
+   159→   159→      className="relative py-24 md:py-32"
+   160→   160→      aria-label={t.misc.playgroundAria}
+   161→   161→    >
+   162→   162→      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+   163→   163→        <SectionHeading
+   164→   164→          eyebrow={pg.eyebrow}
+   165→   165→          title={pg.title}
+   166→   166→          subtitle={pg.subtitle}
+   167→   167→        />
+   168→   168→
+   169→   169→        <motion.div
+   170→   170→          variants={staggerContainer}
+   171→   171→          initial="hidden"
+   172→   172→          whileInView="visible"
+   173→   173→          viewport={viewport}
+   174→   174→          className="grid gap-6 lg:grid-cols-2"
+   175→   175→        >
+   176→   176→          {/* ── Left: the Bloch disc + probability meter ── */}
+   177→   177→          <QuantumCard accent="#00D9FF" noReveal className="p-6 md:p-8">
+   178→   178→            <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
+   179→   179→              {/* Bloch disc (xz-plane projection of the Bloch sphere) */}
+   180→   180→              <div className="relative shrink-0">
+   181→   181→                <svg
+   182→   182→                  width="240"
+   183→   183→                  height="240"
+   184→   184→                  viewBox="0 0 240 240"
+   185→   185→                  role="img"
+   186→   186→                  aria-label={pg.blochAria}
+   187→   187→                  dir="ltr"
+   188→   188→                  className="drop-shadow-[0_0_24px_rgba(0,217,255,0.15)]"
+   189→   189→                >
+   190→   190→                  {/* sphere silhouette */}
+   191→   191→                  <circle
+   192→   192→                    cx={CX}
+   193→   193→                    cy={CY}
+   194→   194→                    r={R}
+   195→   195→                    fill="rgba(17,34,64,0.6)"
+   196→   196→                    stroke="rgba(0,217,255,0.35)"
+   197→   197→                    strokeWidth="1.5"
+   198→   198→                  />
+   199→   199→                  {/* equator hint */}
+   200→   200→                  <ellipse
+   201→   201→                    cx={CX}
+   202→   202→                    cy={CY}
+   203→   203→                    rx={R}
+   204→   204→                    ry={R * 0.32}
+   205→   205→                    fill="none"
+   206→   206→                    stroke="rgba(108,92,231,0.4)"
+   207→   207→                    strokeWidth="1"
+   208→   208→                    strokeDasharray="4 5"
+   209→   209→                  />
+   210→   210→                  {/* z axis */}
+   211→   211→                  <line
+   212→   212→                    x1={CX}
+   213→   213→                    y1={CY - R - 12}
+   214→   214→                    x2={CX}
+   215→   215→                    y2={CY + R + 12}
+   216→   216→                    stroke="rgba(136,146,176,0.35)"
+   217→   217→                    strokeWidth="1"
+   218→   218→                    strokeDasharray="2 4"
+   219→   219→                  />
+   220→   220→                  {/* pole labels */}
+   221→   221→                  <text
+   222→   222→                    x={CX}
+   223→   223→                    y={CY - R - 16}
+   224→   224→                    textAnchor="middle"
+   225→   225→                    fill="#00D9FF"
+   226→   226→                    fontSize="14"
+   227→   227→                    fontFamily="var(--font-mono), monospace"
+   228→   228→                  >
+   229→   229→                    |0⟩
+   230→   230→                  </text>
+   231→   231→                  <text
+   232→   232→                    x={CX}
+   233→   233→                    y={CY + R + 24}
+   234→   234→                    textAnchor="middle"
+   235→   235→                    fill="#6C5CE7"
+   236→   236→                    fontSize="14"
+   237→   237→                    fontFamily="var(--font-mono), monospace"
+   238→   238→                  >
+   239→   239→                    |1⟩
+   240→   240→                  </text>
+   241→   241→
+   242→   242→                  {/* rotating state vector — length is constant for pure states */}
+   243→   243→                  <g transform={`translate(${CX} ${CY})`}>
+   244→   244→                    <motion.g
+   245→   245→                      animate={{ rotate: thetaDeg }}
+   246→   246→                      transition={{ type: "spring", stiffness: 120, damping: 16 }}
+   247→   247→                      style={{ transformOrigin: "0px 0px" }}
+   248→   248→                    >
+   249→   249→                      <line
+   250→   250→                        x1="0"
+   251→   251→                        y1="0"
+   252→   252→                        x2="0"
+   253→   253→                        y2={-R}
+   254→   254→                        stroke="#00D9FF"
+   255→   255→                        strokeWidth="2.5"
+   256→   256→                        strokeLinecap="round"
+   257→   257→                      />
+   258→   258→                      {/* glowing vector tip */}
+   259→   259→                      <circle
+   260→   260→                        cx="0"
+   261→   261→                        cy={-R}
+   262→   262→                        r="7"
+   263→   263→                        fill="#00D9FF"
+   264→   264→                        className="animate-pulse-glow"
+   265→   265→                      />
+   266→   266→                    </motion.g>
+   267→   267→                    {/* origin pivot */}
+   268→   268→                    <circle cx="0" cy="0" r="3" fill="#8892B0" />
+   269→   269→                  </g>
+   270→   270→
+   271→   271→                  {/* ground-state shading: |α|² of the disc from the top */}
+   272→   272→                  <circle
+   273→   273→                    cx={CX}
+   274→   274→                    cy={CY}
+   275→   275→                    r={R}
+   276→   276→                    fill="url(#probGrad)"
+   277→   277→                    opacity="0.16"
+   278→   278→                    style={{
+   279→   279→                      clipPath: `inset(${p0 * 100}% 0 0 0)`,
+   280→   280→                    }}
+   281→   281→                  />
+   282→   282→                  <defs>
+   283→   283→                    <linearGradient id="probGrad" x1="0" y1="0" x2="0" y2="1">
+   284→   284→                      <stop offset="0%" stopColor="#00D9FF" />
+   285→   285→                      <stop offset="100%" stopColor="#6C5CE7" />
+   286→   286→                    </linearGradient>
+   287→   287→                  </defs>
+   288→   288→                </svg>
+   289→   289→
+   290→   290→                {/* measurement collapse flash */}
+   291→   291→                <AnimatePresence>
+   292→   292→                  {flash !== null && (
+   293→   293→                    <motion.div
+   294→   294→                      key={flash}
+   295→   295→                      initial={{ opacity: 0, scale: 0.4 }}
+   296→   296→                      animate={{ opacity: 1, scale: 1 }}
+   297→   297→                      exit={{ opacity: 0, scale: 1.6 }}
+   298→   298→                      transition={{ duration: 0.45 }}
+   299→   299→                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+   300→   300→                      dir="ltr"
+   301→   301→                    >
+   302→   302→                      <span className="font-mono text-5xl font-bold text-quantum-blue text-glow">
+   303→   303→                        |{flash}⟩
+   304→   304→                      </span>
+   305→   305→                    </motion.div>
+   306→   306→                  )}
+   307→   307→                </AnimatePresence>
+   308→   308→              </div>
+   309→   309→
+   310→   310→              {/* probability meter + phase dial + amplitude readout */}
+   311→   311→              <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
+   312→   312→                <div dir={isAr ? "rtl" : "ltr"}>
+   313→   313→                  <p className="mb-2 font-mono text-[10px] tracking-[0.25em] text-quantum-subtle">
+   314→   314→                    <Atom className="me-1.5 inline h-3.5 w-3.5 text-quantum-blue" />
+   315→   315→                    {pg.stateLabel}
+   316→   316→                  </p>
+   317→   317→                  <p
+   318→   318→                    dir="ltr"
+   319→   319→                    className="rounded-lg border border-quantum-blue/15 bg-quantum-navy/70 px-3 py-2.5 text-center font-mono text-sm text-quantum-blue"
+   320→   320→                  >
+   321→   321→                    |ψ⟩ = {cformat(state.a)}|0⟩ + {cformat(state.b)}|1⟩
+   322→   322→                  </p>
+   323→   323→                </div>
+   324→   324→
+   325→   325→                {/* Born-rule probability bars */}
+   326→   326→                <div className="space-y-3" role="img" aria-label={`${pg.prob0Label} ${(p0 * 100).toFixed(0)}%, ${pg.prob1Label} ${(p1 * 100).toFixed(0)}%`}>
+   327→   327→                  {(
+   328→   328→                    [
+   329→   329→                      { label: pg.prob0Label, p: p0, color: "#00D9FF" },
+   330→   330→                      { label: pg.prob1Label, p: p1, color: "#6C5CE7" },
+   331→   331→                    ] as const
+   332→   332→                  ).map((row) => (
+   333→   333→                    <div key={row.label}>
+   334→   334→                      <div className="mb-1 flex items-center justify-between text-[11px] text-quantum-subtle">
+   335→   335→                        <span dir={isAr ? "rtl" : "ltr"}>{row.label}</span>
+   336→   336→                        <span dir="ltr" className="font-mono text-white">
+   337→   337→                          {(row.p * 100).toFixed(1)}%
+   338→   338→                        </span>
+   339→   339→                      </div>
+   340→   340→                      <div className="h-2 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   341→   341→                        <motion.div
+   342→   342→                          className="h-full rounded-full"
+   343→   343→                          style={{
+   344→   344→                            background: `linear-gradient(90deg, ${row.color}, ${row.color}99)`,
+   345→   345→                            boxShadow: `0 0 12px ${row.color}66`,
+   346→   346→                          }}
+   347→   347→                          animate={{ width: `${row.p * 100}%` }}
+   348→   348→                          transition={{ type: "spring", stiffness: 110, damping: 18 }}
+   349→   349→                        />
+   350→   350→                      </div>
+   351→   351→                    </div>
+   352→   352→                  ))}
+   353→   353→                </div>
+   354→   354→
+   355→   355→                {/* relative-phase dial — the invisible axis that makes quantum quantum */}
+   356→   356→                <div className="flex items-center gap-4 rounded-lg border border-quantum-purple/20 bg-quantum-navy/60 p-3">
+   357→   357→                  <svg width="56" height="56" viewBox="0 0 56 56" dir="ltr" aria-hidden="true">
+   358→   358→                    <circle
+   359→   359→                      cx="28"
+   360→   360→                      cy="28"
+   361→   361→                      r="22"
+   362→   362→                      fill="none"
+   363→   363→                      stroke="rgba(108,92,231,0.35)"
+   364→   364→                      strokeWidth="1.5"
+   365→   365→                      strokeDasharray="3 4"
+   366→   366→                    />
+   367→   367→                    <motion.g
+   368→   368→                      animate={{ rotate: phaseDeg }}
+   369→   369→                      transition={{ type: "spring", stiffness: 120, damping: 16 }}
+   370→   370→                      style={{ transformOrigin: "28px 28px" }}
+   371→   371→                      opacity={hasB ? 1 : 0.25}
+   372→   372→                    >
+   373→   373→                      <line
+   374→   374→                        x1="28"
+   375→   375→                        y1="28"
+   376→   376→                        x2="50"
+   377→   377→                        y2="28"
+   378→   378→                        stroke={hasB ? "#FFD166" : "#8892B0"}
+   379→   379→                        strokeWidth="2"
+   380→   380→                        strokeLinecap="round"
+   381→   381→                      />
+   382→   382→                      <circle
+   383→   383→                        cx="50"
+   384→   384→                        cy="28"
+   385→   385→                        r="3"
+   386→   386→                        fill={hasB ? "#FFD166" : "#8892B0"}
+   387→   387→                      />
+   388→   388→                    </motion.g>
+   389→   389→                    <circle cx="28" cy="28" r="2.5" fill="#8892B0" />
+   390→   390→                  </svg>
+   391→   391→                  <div className="min-w-0">
+   392→   392→                    <p className="font-mono text-[10px] tracking-[0.2em] text-quantum-subtle" dir={isAr ? "rtl" : "ltr"}>
+   393→   393→                      {pg.phaseLabel}
+   394→   394→                    </p>
+   395→   395→                    <p dir="ltr" className="font-mono text-sm text-white">
+   396→   396→                      {hasB ? `${phase.toFixed(2)} rad` : "—"}
+   397→   397→                    </p>
+   398→   398→                  </div>
+   399→   399→                </div>
+   400→   400→              </div>
+   401→   401→            </div>
+   402→   402→          </QuantumCard>
+   403→   403→
+   404→   404→          {/* ── Right: gate rack, circuit wire, presets, actions ── */}
+   405→   405→          <QuantumCard accent="#6C5CE7" noReveal className="flex flex-col gap-6 p-6 md:p-8">
+   406→   406→            {/* gates */}
+   407→   407→            <div aria-label={pg.controlsAria}>
+   408→   408→              <div className="mb-3 flex items-baseline justify-between gap-3">
+   409→   409→                <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-white">
+   410→   410→                  <Gauge className="h-4 w-4 text-quantum-purple" />
+   411→   411→                  {pg.gatesTitle}
+   412→   412→                </h3>
+   413→   413→                <p className="text-[11px] text-quantum-subtle">{pg.gatesHint}</p>
+   414→   414→              </div>
+   415→   415→              <div className="grid grid-cols-5 gap-2">
+   416→   416→                {GATES.map((gate) => (
+   417→   417→                  <button
+   418→   418→                    key={gate.symbol}
+   419→   419→                    type="button"
+   420→   420→                    onClick={() => applyOne(gate)}
+   421→   421→                    onMouseEnter={() => setHoverGate(gate)}
+   422→   422→                    onMouseLeave={() => setHoverGate(null)}
+   423→   423→                    onFocus={() => setHoverGate(gate)}
+   424→   424→                    onBlur={() => setHoverGate(null)}
+   425→   425→                    aria-label={pg.gateAria(tx(gate.name))}
+   426→   426→                    aria-describedby="gate-blurb"
+   427→   427→                    className="group/gate flex h-16 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-quantum-navy/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--gate-accent)_60%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-quantum-blue"
+   428→   428→                    style={{ "--gate-accent": gate.accent } as React.CSSProperties}
+   429→   429→                  >
+   430→   430→                    <span
+   431→   431→                      className="font-mono text-lg font-bold transition-colors"
+   432→   432→                      style={{ color: gate.accent }}
+   433→   433→                    >
+   434→   434→                      {gate.symbol}
+   435→   435→                    </span>
+   436→   436→                    <span className="px-1 text-center text-[9px] leading-tight text-quantum-subtle">
+   437→   437→                      {tx(gate.name)}
+   438→   438→                    </span>
+   439→   439→                  </button>
+   440→   440→                ))}
+   441→   441→              </div>
+   442→   442→              {/* gate intuition panel (hover/focus driven) */}
+   443→   443→              <div
+   444→   444→                id="gate-blurb"
+   445→   445→                aria-live="polite"
+   446→   446→                className="mt-3 min-h-[3.25rem] rounded-lg border border-white/5 bg-quantum-navy/60 px-3 py-2.5 text-xs leading-relaxed text-quantum-subtle"
+   447→   447→              >
+   448→   448→                {hoverGate ? (
+   449→   449→                  <span>
+   450→   450→                    <span
+   451→   451→                      className="me-1.5 font-mono font-bold"
+   452→   452→                      style={{ color: hoverGate.accent }}
+   453→   453→                      dir="ltr"
+   454→   454→                    >
+   455→   455→                      {hoverGate.symbol}
+   456→   456→                    </span>
+   457→   457→                    {tx(hoverGate.blurb)}
+   458→   458→                  </span>
+   459→   459→                ) : (
+   460→   460→                  <span className="opacity-50" dir={isAr ? "rtl" : "ltr"}>
+   461→   461→                    {pg.gatesHint}
+   462→   462→                  </span>
+   463→   463→                )}
+   464→   464→              </div>
+   465→   465→            </div>
+   466→   466→
+   467→   467→            {/* circuit wire */}
+   468→   468→            <div>
+   469→   469→              <h3 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold text-white">
+   470→   470→                <CircuitBoard className="h-4 w-4 text-quantum-blue" />
+   471→   471→                {pg.circuitTitle}
+   472→   472→                {circuit.length > 0 && (
+   473→   473→                  <span className="ms-auto font-mono text-[10px] text-quantum-subtle" dir="ltr">
+   474→   474→                    {circuit.length} op{circuit.length === 1 ? "" : "s"}
+   475→   475→                  </span>
+   476→   476→                )}
+   477→   477→              </h3>
+   478→   478→              <div
+   479→   479→                dir="ltr"
+   480→   480→                className="relative flex min-h-[3.5rem] items-center overflow-hidden rounded-lg border border-quantum-blue/15 bg-quantum-navy/70 px-3"
+   481→   481→              >
+   482→   482→                {/* the wire */}
+   483→   483→                <div
+   484→   484→                  className="pointer-events-none absolute inset-x-3 top-1/2 h-px bg-gradient-to-r from-transparent via-quantum-blue/40 to-transparent"
+   485→   485→                  aria-hidden="true"
+   486→   486→                />
+   487→   487→                {visibleChips.length === 0 ? (
+   488→   488→                  <span className="relative z-10 w-full text-center font-mono text-xs text-quantum-subtle/70">
+   489→   489→                    {pg.emptyCircuit}
+   490→   490→                  </span>
+   491→   491→                ) : (
+   492→   492→                  <div className="relative z-10 flex w-full items-center gap-1.5 py-2">
+   493→   493→                    {hiddenCount > 0 && (
+   494→   494→                      <span className="font-mono text-[10px] text-quantum-subtle">
+   495→   495→                        +{hiddenCount}
+   496→   496→                      </span>
+   497→   497→                    )}
+   498→   498→                    <AnimatePresence initial={false}>
+   499→   499→                      {visibleChips.map((symbol, idx) => {
+   500→   500→                        const gate = GATES.find((g) => g.symbol === symbol);
+   501→   501→                        return (
+   502→   502→                          <motion.span
+   503→   503→                            key={`${idx}-${symbol}`}
+   504→   504→                            initial={{ scale: 0, opacity: 0 }}
+   505→   505→                            animate={{ scale: 1, opacity: 1 }}
+   506→   506→                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+   507→   507→                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-quantum-secondary font-mono text-sm font-bold shadow-[0_0_10px_rgba(0,0,0,0.4)]"
+   508→   508→                            style={{
+   509→   509→                              color: gate?.accent ?? "#00D9FF",
+   510→   510→                              borderColor: `${gate?.accent ?? "#00D9FF"}55`,
+   511→   511→                            }}
+   512→   512→                          >
+   513→   513→                            {symbol}
+   514→   514→                          </motion.span>
+   515→   515→                        );
+   516→   516→                      })}
+   517→   517→                    </AnimatePresence>
+   518→   518→                    {/* metering dash at the end of the wire */}
+   519→   519→                    <motion.span
+   520→   520→                      className="ms-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-quantum-blue/40 bg-quantum-navy font-mono text-xs text-quantum-blue"
+   521→   521→                      animate={{ boxShadow: [
+   522→   522→                        "0 0 0 rgba(0,217,255,0)",
+   523→   523→                        "0 0 14px rgba(0,217,255,0.45)",
+   524→   524→                        "0 0 0 rgba(0,217,255,0)",
+   525→   525→                      ] }}
+   526→   526→                      transition={{ duration: 2.4, repeat: Infinity }}
+   527→   527→                      title="measure"
+   528→   528→                    >
+   529→   529→                      ⌖
+   530→   530→                    </motion.span>
+   531→   531→                  </div>
+   532→   532→                )}
+   533→   533→              </div>
+   534→   534→            </div>
+   535→   535→
+   536→   536→            {/* presets */}
+   537→   537→            <div>
+   538→   538→              <h3 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold text-white">
+   539→   539→                <Orbit className="h-4 w-4 text-quantum-green" />
+   540→   540→                {pg.presetsTitle}
+   541→   541→              </h3>
+   542→   542→              <div className="flex flex-wrap gap-2">
+   543→   543→                {PRESETS.map((preset) => (
+   544→   544→                  <button
+   545→   545→                    key={preset.label}
+   546→   546→                    type="button"
+   547→   547→                    onClick={() => loadPreset(preset.state)}
+   548→   548→                    title={tx(preset.note)}
+   549→   549→                    aria-label={pg.presetAria(preset.label)}
+   550→   550→                    className="rounded-lg border border-quantum-green/25 bg-quantum-navy/70 px-3.5 py-2 font-mono text-sm text-quantum-green transition-all duration-200 hover:-translate-y-0.5 hover:border-quantum-green/60 hover:shadow-[0_0_16px_rgba(0,184,148,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-quantum-green"
+   551→   551→                  >
+   552→   552→                    {preset.label}
+   553→   553→                  </button>
+   554→   554→                ))}
+   555→   555→              </div>
+   556→   556→            </div>
+   557→   557→
+   558→   558→            {/* actions */}
+   559→   559→            <div className="mt-auto flex flex-wrap gap-2 border-t border-white/5 pt-5">
+   560→   560→              <Button
+   561→   561→                type="button"
+   562→   562→                onClick={measureOnce}
+   563→   563→                className="min-h-11 flex-1 bg-quantum-blue font-heading text-quantum-navy shadow-[0_0_20px_rgba(0,217,255,0.25)] hover:bg-quantum-blue/85 hover:shadow-[0_0_30px_rgba(0,217,255,0.45)] sm:flex-none"
+   564→   564→              >
+   565→   565→                <Dices className="me-1.5 h-4 w-4" />
+   566→   566→                {pg.measure}
+   567→   567→              </Button>
+   568→   568→              <Button
+   569→   569→                type="button"
+   570→   570→                onClick={runShots}
+   571→   571→                variant="outline"
+   572→   572→                className="min-h-11 flex-1 border-quantum-purple/40 bg-transparent font-heading text-quantum-purple hover:bg-quantum-purple/10 hover:text-quantum-purple sm:flex-none"
+   573→   573→              >
+   574→   574→                <Dices className="me-1.5 h-4 w-4" />
+   575→   575→                {pg.shots}
+   576→   576→              </Button>
+   577→   577→              <Button
+   578→   578→                type="button"
+   579→   579→                onClick={undo}
+   580→   580→                disabled={history.length === 0}
+   581→   581→                variant="ghost"
+   582→   582→                className="min-h-11 font-heading text-quantum-subtle hover:bg-white/5 hover:text-white"
+   583→   583→              >
+   584→   584→                <Undo2 className="me-1.5 h-4 w-4" />
+   585→   585→                {pg.undo}
+   586→   586→              </Button>
+   587→   587→              <Button
+   588→   588→                type="button"
+   589→   589→                onClick={reset}
+   590→   590→                variant="ghost"
+   591→   591→                className="min-h-11 font-heading text-quantum-subtle hover:bg-white/5 hover:text-white"
+   592→   592→              >
+   593→   593→                <RotateCcw className="me-1.5 h-4 w-4" />
+   594→   594→                {pg.reset}
+   595→   595→              </Button>
+   596→   596→            </div>
+   597→   597→          </QuantumCard>
+   598→   598→
+   599→   599→          {/* ── Full-width result strip + histogram ── */}
+   600→   600→          <div
+   601→   601→            className="lg:col-span-2"
+   602→   602→            role="status"
+   603→   603→            aria-live="polite"
+   604→   604→            aria-label={pg.resultAria}
+   605→   605→          >
+   606→   606→            <AnimatePresence mode="wait">
+   607→   607→              {shots && (
+   608→   608→                <motion.div
+   609→   609→                  key={`${shots.zeros}-${shots.ones}`}
+   610→   610→                  initial={{ opacity: 0, y: 16 }}
+   611→   611→                  animate={{ opacity: 1, y: 0 }}
+   612→   612→                  exit={{ opacity: 0, y: -8 }}
+   613→   613→                  className="rounded-2xl border border-quantum-blue/15 bg-quantum-secondary/70 p-5 backdrop-blur-sm"
+   614→   614→                >
+   615→   615→                  <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+   616→   616→                    <div className="space-y-2.5">
+   617→   617→                      {(
+   618→   618→                        [
+   619→   619→                          { n: shots.zeros, label: "|0⟩", color: "#00D9FF" },
+   620→   620→                          { n: shots.ones, label: "|1⟩", color: "#6C5CE7" },
+   621→   621→                        ] as const
+   622→   622→                      ).map((bar) => (
+   623→   623→                        <div key={bar.label} className="flex items-center gap-3">
+   624→   624→                          <span dir="ltr" className="w-10 shrink-0 font-mono text-sm" style={{ color: bar.color }}>
+   625→   625→                            {bar.label}
+   626→   626→                          </span>
+   627→   627→                          <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   628→   628→                            <motion.div
+   629→   629→                              className="h-full rounded-full"
+   630→   630→                              style={{ background: bar.color, boxShadow: `0 0 14px ${bar.color}66` }}
+   631→   631→                              initial={{ width: 0 }}
+   632→   632→                              animate={{ width: `${bar.n}%` }}
+   633→   633→                              transition={{ type: "spring", stiffness: 60, damping: 16 }}
+   634→   634→                            />
+   635→   635→                          </div>
+   636→   636→                          <span dir="ltr" className="w-8 shrink-0 text-end font-mono text-sm text-white">
+   637→   637→                            {bar.n}
+   638→   638→                          </span>
+   639→   639→                        </div>
+   640→   640→                      ))}
+   641→   641→                    </div>
+   642→   642→                    <div className="text-center sm:text-start">
+   643→   643→                      <p dir={isAr ? "rtl" : "ltr"} className="text-sm text-quantum-subtle">
+   644→   644→                        {pg.shotsSummary(shots.zeros, shots.ones)}
+   645→   645→                      </p>
+   646→   646→                      <p className="mt-1 text-[11px] italic text-quantum-subtle/70">
+   647→   647→                        {pg.histogramNote}
+   648→   648→                      </p>
+   649→   649→                    </div>
+   650→   650→                  </div>
+   651→   651→                </motion.div>
+   652→   652→              )}
+   653→   653→            </AnimatePresence>
+   654→   654→          </div>
+   655→   655→
+   656→   656→          {/* ── Pedagogy footer — the pitch inside the toy ── */}
+   657→   657→          <motion.div variants={quantumVariants} className="lg:col-span-2">
+   658→   658→            <div className="relative overflow-hidden rounded-2xl border border-quantum-blue/15 bg-gradient-to-br from-quantum-navy/90 to-quantum-secondary/60 p-6 md:p-8">
+   659→   659→              {/* decorative psi */}
+   660→   660→              <span
+   661→   661→                aria-hidden="true"
+   662→   662→                className="pointer-events-none absolute -top-6 end-6 select-none font-heading text-[7rem] font-black leading-none text-white/[0.04]"
+   663→   663→                dir="ltr"
+   664→   664→              >
+   665→   665→                ψ
+   666→   666→              </span>
+   667→   667→              <p className="max-w-3xl text-sm leading-relaxed text-quantum-subtle md:text-base" dir={isAr ? "rtl" : "ltr"}>
+   668→   668→                {pg.pedagogyPre}
+   669→   669→                <span className="font-heading font-bold text-quantum-blue">
+   670→   670→                  {pg.pedagogyAccent}
+   671→   671→                </span>
+   672→   672→                {pg.pedagogyPost}
+   673→   673→              </p>
+   674→   674→            </div>
+   675→   675→          </motion.div>
+   676→   676→        </motion.div>
+   677→   677→      </div>
+   678→   678→    </section>
+   679→   679→  );
+   680→   680→}
+   681→   681→
