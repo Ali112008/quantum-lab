@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FAQ_ITEMS, LAB_EMAIL, PROPOSAL_PDF } from "@/lib/data";
+import { FAQ_ITEMS, LAB_EMAIL, PROPOSAL_PDFS } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { staggerContainer, quantumVariants, viewport } from "@/lib/animations";
 
@@ -19,7 +19,7 @@ import { staggerContainer, quantumVariants, viewport } from "@/lib/animations";
  */
 
 export default function FAQ() {
-  const { t, tx } = useLang();
+  const { t, tx, lang } = useLang();
 
   return (
     <section id="faq" className="relative py-24 md:py-32" aria-label={t.misc.faqAria}>
@@ -68,8 +68,8 @@ export default function FAQ() {
               </a>
               <div className="mt-4 border-t border-white/5 pt-4">
                 <a
-                  href={PROPOSAL_PDF}
-                  download="QRL-Lab-Seed-Proposal.pdf"
+                  href={PROPOSAL_PDFS[lang].href}
+                  download={PROPOSAL_PDFS[lang].download}
                   className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-quantum-subtle transition-colors hover:text-quantum-blue"
                 >
                   <FileDown className="size-4" aria-hidden="true" />

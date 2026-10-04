@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { Atom, Menu, X, ArrowUpRight, FileDown, Languages } from "lucide-react";
-import { NAV_LINKS, PROPOSAL_PDF } from "@/lib/data";
+import { NAV_LINKS, PROPOSAL_PDFS } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 
 /**
@@ -129,8 +129,8 @@ export default function Navbar() {
               </span>
             </button>
             <a
-              href={PROPOSAL_PDF}
-              download="QRL-Lab-Seed-Proposal.pdf"
+              href={PROPOSAL_PDFS[lang].href}
+              download={PROPOSAL_PDFS[lang].download}
               aria-label={t.nav.downloadPdfAria}
               title={t.nav.downloadPdfAria}
               className="inline-flex items-center justify-center size-9 rounded-lg border border-quantum-blue/30 text-quantum-blue hover:bg-quantum-blue/10 hover:border-quantum-blue/60 transition-all"
@@ -169,7 +169,7 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="md:hidden overflow-hidden bg-quantum-navy/95 backdrop-blur-md border-b border-quantum-blue/10"
+            className="md:hidden overflow-hidden bg-quantum-navy/[0.98] backdrop-blur-xl border-b border-quantum-blue/10 shadow-[0_24px_48px_-12px_rgba(0,217,255,0.12)]"
           >
             <ul className="px-4 py-4 space-y-1">
               {NAV_LINKS.map((link) => (
@@ -199,8 +199,8 @@ export default function Navbar() {
               </li>
               <li>
                 <a
-                  href={PROPOSAL_PDF}
-                  download="QRL-Lab-Seed-Proposal.pdf"
+                  href={PROPOSAL_PDFS[lang].href}
+                  download={PROPOSAL_PDFS[lang].download}
                   onClick={() => setOpen(false)}
                   className="flex items-center justify-center gap-2 rounded-lg border border-quantum-blue/30 px-4 py-3 font-medium text-quantum-blue hover:bg-quantum-blue/10 transition-colors"
                 >

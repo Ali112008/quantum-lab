@@ -1,0 +1,846 @@
+     1→import type { Lang } from "@/lib/i18n";
+     2→
+     3→/**
+     4→ * The full bilingual copy deck for the landing page.
+     5→ * English = source of truth from the pitch deck; Arabic = formal MSA with a
+     6→ * scientific register (Egyptian funders read both).
+     7→ *
+     8→ * Everything typed through `Copy` — a missing key in either language is a
+     9→ * compile error, not a production surprise (no quantum tunneling allowed).
+    10→ */
+    11→
+    12→export interface Copy {
+    13→  meta: {
+    14→    skipToContent: string;
+    15→  };
+    16→  nav: {
+    17→    links: { href: string; label: string }[];
+    18→    cta: string;
+    19→    brandTag: string;
+    20→    downloadPdfAria: string;
+    21→    proposalPdfLabel: string;
+    22→    openMenu: string;
+    23→    closeMenu: string;
+    24→    langToggleAria: string;
+    25→  };
+    26→  hero: {
+    27→    badge: string;
+    28→    headline: { text: string; accent?: boolean }[];
+    29→    subPre: string;
+    30→    subLab: string;
+    31→    subMid: string;
+    32→    subPost: string;
+    33→    ctaExplore: string;
+    34→    ctaTeam: string;
+    35→    badges: string[];
+    36→    scroll: string;
+    37→    scrollAria: string;
+    38→    circuitAria: string;
+    39→    circuitCaption: string;
+    40→  };
+    41→  problem: {
+    42→    eyebrow: string;
+    43→    title: string;
+    44→    subtitle: string;
+    45→    funnelAria: string;
+    46→    punchPre: string;
+    47→    punchAccent: string;
+    48→    decoTerm: string;
+    49→    decoBody: string;
+    50→    stat300: string;
+    51→    stat0: string;
+    52→    stat2300: string;
+    53→    stat2300Accent: string;
+    54→  };
+    55→  solution: {
+    56→    eyebrow: string;
+    57→    title: string;
+    58→    subtitle: string;
+    59→    imageAlt: string;
+    60→    imageCaption: string;
+    61→    pillarsTitle: string;
+    62→    pillarsNote: string;
+    63→    stackTitlePre: string;
+    64→    stackTitleAccent: string;
+    65→    stackNote: string;
+    66→    resultsTitlePre: string;
+    67→    resultsTitleAccent: string;
+    68→  };
+    69→  methodology: {
+    70→    eyebrow: string;
+    71→    title: string;
+    72→    subtitle: string;
+    73→    phaseAria: (id: number, name: string) => string;
+    74→    phaseBraKet: (id: number) => string;
+    75→    exitCriteria: (id: number) => string;
+    76→    activitiesAria: (id: number) => string;
+    77→    quote: string;
+    78→  };
+    79→  budget: {
+    80→    askEyebrow: string;
+    81→    askChips: string[];
+    82→    askNote: string;
+    83→    eyebrow: string;
+    84→    title: string;
+    85→    subtitle: string;
+    86→    donutAria: (pct: number) => string;
+    87→    legendAria: (label: string, pct: number, amt: string, desc: string) => string;
+    88→    perStudent: (amt: string) => string;
+    89→    pctOfLab: (pct: number) => string;
+    90→    sliderLabel: string;
+    91→    sliderHint: (step: string) => string;
+    92→    scenariosTitle: string;
+    93→    scenariosAria: string;
+    94→    scenarioBtn: (k: string, title: string) => string;
+    95→    outcomeWith: (amount: string) => string;
+    96→    outcomeZero: string;
+    97→    outcomeBody: (r: {
+    98→      studentsTrained: number;
+    99→      projectsCompleted: number;
+   100→      publications: number;
+   101→      industryPartners: number;
+   102→    }) => string;
+   103→    roiTitle: string;
+   104→    roiLabels: string[];
+   105→    promise: string;
+   106→    promiseDetail: string;
+   107→    promiseDetail2: string;
+   108→    itemizedTitlePre: string;
+   109→    itemizedTitleAccent: string;
+   110→    itemizedSub: string;
+   111→    colResource: string;
+   112→    colQty: string;
+   113→    colCost: string;
+   114→    tableCaption: string;
+   115→    totalSeed: string;
+   116→    closing: string;
+   117→  };
+   118→  scoreboard: {
+   119→    eyebrow: string;
+   120→    title: string;
+   121→    subtitle: string;
+   122→    tilesAria: string;
+   123→    elsewhereTitle: string;
+   124→    hereTitle: string;
+   125→    exchangeEyebrow: string;
+   126→    exchangeBodyPre: string;
+   127→    exchangeAccent: string;
+   128→    exchangeBodyPost: string;
+   129→  };
+   130→  team: {
+   131→    eyebrow: string;
+   132→    title: string;
+   133→    subtitle: string;
+   134→    filtersAria: string;
+   135→    filters: Record<string, string>;
+   136→    gridAria: string;
+   137→    note: string;
+   138→    cta: string;
+   139→  };
+   140→  faq: {
+   141→    eyebrow: string;
+   142→    titlePre: string;
+   143→    titleAccent: string;
+   144→    intro: string;
+   145→    guaranteeTag: string;
+   146→    guaranteeBody: string;
+   147→    guaranteeAccent: string;
+   148→    askDirect: string;
+   149→    pdfPre: string;
+   150→    pdfAccent: string;
+   151→    pdfMeta: string;
+   152→    observed: (n: number) => string;
+   153→  };
+   154→  contact: {
+   155→    eyebrow: string;
+   156→    title: string;
+   157→    subtitle: string;
+   158→    counterScanning: string;
+   159→    counter: (n: number) => string;
+   160→    name: string;
+   161→    namePh: string;
+   162→    email: string;
+   163→    emailPh: string;
+   164→    org: string;
+   165→    orgOptional: string;
+   166→    orgPh: string;
+   167→    interest: string;
+   168→    interestPh: string;
+   169→    interestOptions: { value: "funding" | "partnership" | "join" | "other"; label: string }[];
+   170→    message: string;
+   171→    messagePh: string;
+   172→    privacy: string;
+   173→    responseTime: string;
+   174→    submit: string;
+   175→    submitting: string;
+   176→    honeypotLabel: string;
+   177→    successTitle: string;
+   178→    successBody: string;
+   179→    successBtn: string;
+   180→    toastTitle: string;
+   181→    toastDesc: string;
+   182→    toastErrorTitle: string;
+   183→    toastErrorDesc: string;
+   184→    rateLimited: string;
+   185→    // zod messages (bound at render time so validation speaks the page language)
+   186→    zodName: string;
+   187→    zodEmail: string;
+   188→    zodMessage: string;
+   189→  };
+   190→  newsletter: {
+   191→    title: string;
+   192→    subtitle: string;
+   193→    emailPh: string;
+   194→    submit: string;
+   195→    submitting: string;
+   196→    count: (n: number) => string;
+   197→    toastTitle: string;
+   198→    toastDesc: string;
+   199→    toastDupTitle: string;
+   200→    toastDupDesc: string;
+   201→    toastErrorTitle: string;
+   202→    zodEmail: string;
+   203→    honeypotLabel: string;
+   204→  };
+   205→  footer: {
+   206→    ctaPre: string;
+   207→    ctaAccent: string;
+   208→    sub: string;
+   209→    reviewTerms: string;
+   210→    onePager: string;
+   211→    onePagerAria: string;
+   212→    terms: string[];
+   213→    termsAria: string;
+   214→    brand: string;
+   215→    dept: string;
+   216→    transparency: string[];
+   217→    transparencyAria: string;
+   218→    copyright: string;
+   219→    madeWith: string;
+   220→    madeAccent: string;
+   221→    socialsLabel: string;
+   222→    socialAria: (name: string) => string;
+   223→  };
+   224→  misc: {
+   225→    backToTop: string;
+   226→    heroSectionAria: string;
+   227→    problemAria: string;
+   228→    solutionAria: string;
+   229→    methodologyAria: string;
+   230→    budgetAria: string;
+   231→    scoreboardAria: string;
+   232→    teamAria: string;
+   233→    faqAria: string;
+   234→    contactAria: string;
+   235→    footerAria: string;
+   236→  };
+   237→}
+   238→
+   239→/* ------------------------------------------------------------------ */
+   240→/*                              ENGLISH                                */
+   241→/* ------------------------------------------------------------------ */
+   242→
+   243→const en: Copy = {
+   244→  meta: { skipToContent: "Skip to main content" },
+   245→  nav: {
+   246→    links: [
+   247→      { href: "#problem", label: "Problem" },
+   248→      { href: "#solution", label: "Solution" },
+   249→      { href: "#methodology", label: "Methodology" },
+   250→      { href: "#budget", label: "Budget" },
+   251→      { href: "#team", label: "Team" },
+   252→      { href: "#faq", label: "FAQ" },
+   253→      { href: "#contact", label: "Contact" },
+   254→    ],
+   255→    cta: "Fund the Future",
+   256→    brandTag: "Seed Pitch 2026",
+   257→    downloadPdfAria: "Download the one-page proposal PDF",
+   258→    proposalPdfLabel: "One-Page Proposal (PDF)",
+   259→    openMenu: "Open menu",
+   260→    closeMenu: "Close menu",
+   261→    langToggleAria: "Switch language to Arabic",
+   262→  },
+   263→  hero: {
+   264→    badge: "Seed Pitch · 2026 · Student-Led · Faculty-Mentored",
+   265→    headline: [
+   266→      { text: "Building" },
+   267→      { text: "Egypt's" },
+   268→      { text: "Quantum", accent: true },
+   269→      { text: "Future", accent: true },
+   270→      { text: "Today" },
+   271→    ],
+   272→    subPre: "A student-led",
+   273→    subLab: "Quantum Research Lab",
+   274→    subMid: "seeking",
+   275→    subPost:
+   276→      "in seed funding — where students simulate reality on real quantum hardware, and the first lab of its kind in the region.",
+   277→    ctaExplore: "Explore Our Proposal",
+   278→    ctaTeam: "Meet the Team",
+   279→    badges: [
+   280→      "Presented to ASRT · ITIDA",
+   281→      "Global Quantum Partners",
+   282→      "15-Minute Investor Edition",
+   283→    ],
+   284→    scroll: "Scroll",
+   285→    scrollAria: "Scroll to the problem section",
+   286→    circuitAria:
+   287→      "Quantum circuit diagram: Hadamard gate on qubit 0, CNOT entangling qubits 0 and 1, measurement on both",
+   288→    circuitCaption: "grover_bell.py · backend: ibm_torino · shots: 1024",
+   289→  },
+   290→  problem: {
+   291→    eyebrow: "SECTION 01 — THE PROBLEM",
+   292→    title: "The Quantum Talent Pipeline Decoheres",
+   293→    subtitle:
+   294→      "Egypt graduates thousands of brilliant STEM students — and loses almost every one who touches quantum. Not for lack of talent. For lack of a lab.",
+   295→    funnelAria:
+   296→      "Talent funnel: from enrolled students to careers that stay in the region",
+   297→    punchPre: "We measure the talent. ",
+   298→    punchAccent: "Then we lose it.",
+   299→    decoTerm: "decoherence (n.)",
+   300→    decoBody:
+   301→      "— what destroys a quantum state before it can be measured. Also what happens to our best students between graduation and opportunity.",
+   302→    stat300:
+   303→      "growth in quantum job postings worldwide — the demand curve is vertical.",
+   304→    stat0: "practical quantum labs in Egyptian universities. Zero. The first-mover seat is empty.",
+   305→    stat2300:
+   306→      "states representable by a 300-qubit machine — more than atoms in the observable universe. ",
+   307→    stat2300Accent: "And our students have never touched one.",
+   308→  },
+   309→  solution: {
+   310→    eyebrow: "SECTION 02 — THE SOLUTION",
+   311→    title: "The Quantum Research Lab",
+   312→    subtitle:
+   313→      "A student-led, faculty-mentored laboratory where students run real quantum simulations and publish real research — the first of its kind in the region.",
+   314→    imageAlt:
+   315→      "Golden dilution-refrigerator quantum computer — the class of hardware our students access through the cloud",
+   316→    imageCaption: "The machines we simulate on — real quantum hardware",
+   317→    pillarsTitle: "Three Pillars, One Lab",
+   318→    pillarsNote: "entangled — each pillar amplifies the other two",
+   319→    stackTitlePre: "Our Stack — ",
+   320→    stackTitleAccent: "Real Hardware, Today",
+   321→    stackNote: "every layer is live today — zero capital required",
+   322→    resultsTitlePre: "Measured Results — ",
+   323→    resultsTitleAccent: "Not Promises",
+   324→  },
+   325→  methodology: {
+   326→    eyebrow: "SECTION 03 — THE CIRCUIT",
+   327→    title: "The Three-Year Circuit",
+   328→    subtitle:
+   329→      "Each phase output is the next phase input — the phases are entangled. Click any phase to collapse the wavefunction.",
+   330→    phaseAria: (id, name) => `Focus phase ${id}: ${name}`,
+   331→    phaseBraKet: (id) => `|Phase ${id}⟩`,
+   332→    exitCriteria: (id) => `Phase ${id} exit criteria`,
+   333→    activitiesAria: (id) => `Phase ${id} activities`,
+   334→    quote:
+   335→      "“each phase output is the next phase input — the phases are entangled”",
+   336→  },
+   337→  budget: {
+   338→    askEyebrow: "The Ask",
+   339→    askChips: ["18 months of runway", "200 careers launched", "1 first-mover lab"],
+   340→    askNote: "Less than the cost of one conference booth per year.",
+   341→    eyebrow: "SECTION 04 — BUDGET",
+   342→    title: "Where Every Dollar Goes",
+   343→    subtitle:
+   344→      "Drag the slider and watch the lab take shape. Allocation proportions are locked to the audited plan — the ring shows how much of the full lab your investment ignites.",
+   345→    donutAria: (pct) =>
+   346→      `Donut chart: ${pct} percent of the full $50,000 lab funded`,
+   347→    legendAria: (label, pct, amt, desc) =>
+   348→      `${label}: ${pct} percent, about ${amt}. ${desc}`,
+   349→    perStudent: (amt) => `≈ ${amt} / student`,
+   350→    pctOfLab: (pct) => `${pct}% of full lab`,
+   351→    sliderLabel: "Tune the investment",
+   352→    sliderHint: (step) => `Slide, or use ← / → arrow keys. Step ${step}.`,
+   353→    scenariosTitle: "“WHAT IF” SCENARIOS",
+   354→    scenariosAria: "Preset funding scenarios",
+   355→    scenarioBtn: (k, title) => `${k} · ${title}`,
+   356→    outcomeWith: (amount) => `With ${amount}, `,
+   357→    outcomeZero:
+   358→      "the lab stays in superposition — nothing collapses into reality.",
+   359→    outcomeBody: (r) =>
+   360→      `we can train ${r.studentsTrained} students, complete ${r.projectsCompleted} research project${r.projectsCompleted === 1 ? "" : "s"}, publish ${r.publications} peer-reviewed paper${r.publications === 1 ? "" : "s"}, and sign ${r.industryPartners} industry partnership${r.industryPartners === 1 ? "" : "s"}.`,
+   361→    roiTitle: "RETURN ON INVESTMENT — BY YEAR 3",
+   362→    roiLabels: [
+   363→      "students trained",
+   364→      "research projects",
+   365→      "publications",
+   366→      "industry partners",
+   367→      "hackathons hosted",
+   368→    ],
+   369→    promise: "the $1 → $100 promise",
+   370→    promiseDetail:
+   371→      " — every seed dollar compounds into ~$100 of created value by 2036",
+   372→    promiseDetail2: " (skills premium + follow-on grants + ecosystem effects)",
+   373→    itemizedTitlePre: "Itemized & ",
+   374→    itemizedTitleAccent: "Audit-Ready",
+   375→    itemizedSub:
+   376→      "Quarterly reporting reconciles against this exact table — the full $50,000 allocation.",
+   377→    colResource: "Resource",
+   378→    colQty: "Qty",
+   379→    colCost: "Cost",
+   380→    tableCaption:
+   381→      "Itemized budget for the full fifty thousand dollar seed request",
+   382→    totalSeed: "TOTAL SEED",
+   383→    closing:
+   384→      "Your seed is not our business model. It is our ignition — and ignitions only fire once.",
+   385→  },
+   386→  scoreboard: {
+   387→    eyebrow: "SECTION 05 — THE SCOREBOARD",
+   388→    title: "Year 3, Measured",
+   389→    subtitle:
+   390→      "We do not ask you to believe a vision. We ask you to hold us to these numbers — they are the acceptance criteria of your investment.",
+   391→    tilesAria: "Year 3 target outcomes",
+   392→    elsewhereTitle: "WHAT $50K USUALLY BUYS",
+   393→    hereTitle: "WHAT $50K BUYS HERE",
+   394→    exchangeEyebrow: "The ten-year exchange rate · 2026 → 2036",
+   395→    exchangeBodyPre: "Every seed dollar compounds into roughly ",
+   396→    exchangeAccent: "one hundred dollars",
+   397→    exchangeBodyPost:
+   398→      " of created value — skills premium, follow-on grants, and ecosystem effects.",
+   399→  },
+   400→  team: {
+   401→    eyebrow: "SECTION 06 — THE TEAM",
+   402→    title: "Entangled Expertise",
+   403→    subtitle:
+   404→      "15 students, one wavefunction — physicists, engineers, and mathematicians led by the people who will do the work: the students themselves.",
+   405→    filtersAria: "Filter team members by discipline",
+   406→    filters: {
+   407→      all: "All 15",
+   408→      leads: "Leads",
+   409→      research: "Research",
+   410→      tech: "Tech",
+   411→      ops: "Ops & Events",
+   412→      media: "Media & Design",
+   413→      open: "Open Seats",
+   414→    },
+   415→    gridAria: "Team members",
+   416→    note: "one entangled system — full roster & photos available on request",
+   417→    cta: "Claim an open founding seat",
+   418→  },
+   419→  faq: {
+   420→    eyebrow: "SECTION 07 — FAQ",
+   421→    titlePre: "Measured ",
+   422→    titleAccent: "Answers",
+   423→    intro:
+   424→      "Every funder asks the same eight questions. We'd rather collapse the uncertainty here than in a meeting — read on, then bring the hard ones.",
+   425→    guaranteeTag: "<GUARANTEE />",
+   426→    guaranteeBody:
+   427→      "If any answer above feels hand-wavy, email us and we'll send the spreadsheet behind it — ",
+   428→    guaranteeAccent: "quarterly, signed, and open",
+   429→    askDirect: "Ask a question directly",
+   430→    pdfPre: "Prefer paper? ",
+   431→    pdfAccent: "Download the one-page PDF",
+   432→    pdfMeta: "A4 · 276KB",
+   433→    observed: (n) =>
+   434→      `OBSERVED: ${n} QUESTIONS · SUPERPOSITION INTACT: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
+   435→  },
+   436→  contact: {
+   437→    eyebrow: "SECTION 08 — MAKE CONTACT",
+   438→    title: "Collapse the Wavefunction",
+   439→    subtitle:
+   440→      "Every partnership starts as a signal. Send yours — funding, industry pilots, or one of the two open founding seats.",
+   441→    counterScanning: "SIGNAL SCANNING…",
+   442→    counter: (n) =>
+   443→      `${n} SIGNAL${n === 1 ? "" : "S"} RECEIVED — YOU'D BE MEASUREMENT #${n + 1}`,
+   444→    name: "Name",
+   445→    namePh: "Dr. Ahmed Hassan",
+   446→    email: "Email",
+   447→    emailPh: "you@agency.org",
+   448→    org: "Organization",
+   449→    orgOptional: "(optional)",
+   450→    orgPh: "ASRT · ITIDA · IBM · …",
+   451→    interest: "I'm interested in",
+   452→    interestPh: "Choose a channel",
+   453→    interestOptions: [
+   454→      { value: "funding", label: "Seed Funding ($50K)" },
+   455→      { value: "partnership", label: "Industry Partnership" },
+   456→      { value: "join", label: "Join the Team (|0⟩ / |1⟩)" },
+   457→      { value: "other", label: "Something Else" },
+   458→    ],
+   459→    message: "Message",
+   460→    messagePh: "Tell us how you'd like to entangle with the lab…",
+   461→    privacy: "Encrypted in transit · stored in our lab database only",
+   462→    responseTime: "avg. response time: 48h",
+   463→    submit: "Transmit Signal",
+   464→    submitting: "Transmitting…",
+   465→    honeypotLabel: "Leave this field empty",
+   466→    successTitle: "Signal Received",
+   467→    successBody:
+   468→      "Your inquiry collapsed into a row in our lab database. A human (a real one, we checked) will reply within 48 hours.",
+   469→    successBtn: "Send another signal",
+   470→    toastTitle: "Signal received ✅",
+   471→    toastDesc:
+   472→      "Your measurement collapsed into an email in our inbox — we reply within 48 hours.",
+   473→    toastErrorTitle: "Decoherence detected",
+   474→    toastErrorDesc: "Please try again in a moment.",
+   475→    rateLimited:
+   476→      "Too many signals from your node — the channel needs to decohere for a bit. Try again later.",
+   477→    zodName: "Name must be at least 2 characters",
+   478→    zodEmail: "Please enter a valid email address",
+   479→    zodMessage: "Tell us a little more — at least 10 characters",
+   480→  },
+   481→  newsletter: {
+   482→    title: "Stay Entangled",
+   483→    subtitle: "One monthly progress signal — no noise, no collapse.",
+   484→    emailPh: "your@email.org",
+   485→    submit: "Subscribe",
+   486→    submitting: "Subscribing…",
+   487→    count: (n) =>
+   488→      `${n} SUBSCRIBER${n === 1 ? "" : "S"} ON THE LIST`,
+   489→    toastTitle: "Qubit registered ✅",
+   490→    toastDesc: "You're on the list — the next signal reaches you soon.",
+   491→    toastDupTitle: "Already entangled",
+   492→    toastDupDesc: "This email is subscribed — your superposition is preserved.",
+   493→    toastErrorTitle: "Subscription decohered",
+   494→    zodEmail: "Please enter a valid email address",
+   495→    honeypotLabel: "Leave this field empty",
+   496→  },
+   497→  footer: {
+   498→    ctaPre: "Join the ",
+   499→    ctaAccent: "Quantum Revolution",
+   500→    sub: "For three years this lab has existed in superposition — every outcome possible at once. Today, you are the measurement.",
+   501→    reviewTerms: "Review the Terms",
+   502→    onePager: "One-Page PDF",
+   503→    onePagerAria: "Download the one-page proposal PDF (A4)",
+   504→    terms: [
+   505→      "$50,000 — seed investment",
+   506→      "3-year partnership — quarterly transparency reports",
+   507→      "Co-branded outcomes — lab naming rights",
+   508→      "First-look — at graduating quantum talent",
+   509→    ],
+   510→    termsAria: "Partnership terms",
+   511→    brand: "University Quantum Research Laboratory",
+   512→    dept: "Dept. of Physics · Computer Science",
+   513→    transparency: ["Quarterly reports", "Open finances", "ASRT · ITIDA aligned"],
+   514→    transparencyAria: "Transparency commitments",
+   515→    copyright: "© 2026 Quantum Research Lab — Seed Proposal · v1.0",
+   516→    madeWith: "Made with ❤️ by the Quantum Research Team — ",
+   517→    madeAccent: "Where Students Simulate Reality",
+   518→    socialsLabel: "Social media",
+   519→    socialAria: (name) => `Quantum Research Lab on ${name}`,
+   520→  },
+   521→  misc: {
+   522→    backToTop: "Back to top",
+   523→    heroSectionAria: "Introduction",
+   524→    problemAria: "The problem",
+   525→    solutionAria: "The solution",
+   526→    methodologyAria: "Methodology",
+   527→    budgetAria: "Budget calculator",
+   528→    scoreboardAria: "Year three scoreboard",
+   529→    teamAria: "The team",
+   530→    faqAria: "Frequently asked questions",
+   531→    contactAria: "Contact the lab",
+   532→    footerAria: "Contact and partnership",
+   533→  },
+   534→};
+   535→
+   536→/* ------------------------------------------------------------------ */
+   537→/*                              ARABIC                                 */
+   538→/* ------------------------------------------------------------------ */
+   539→
+   540→const ar: Copy = {
+   541→  meta: { skipToContent: "تخطَّ إلى المحتوى الرئيسي" },
+   542→  nav: {
+   543→    links: [
+   544→      { href: "#problem", label: "المشكلة" },
+   545→      { href: "#solution", label: "الحل" },
+   546→      { href: "#methodology", label: "خطة العمل" },
+   547→      { href: "#budget", label: "الميزانية" },
+   548→      { href: "#team", label: "الفريق" },
+   549→      { href: "#faq", label: "الأسئلة الشائعة" },
+   550→      { href: "#contact", label: "تواصل معنا" },
+   551→    ],
+   552→    cta: "موّل المستقبل",
+   553→    brandTag: "عرض تمويل · 2026",
+   554→    downloadPdfAria: "نزّل الملخص التنفيذي بصيغة PDF",
+   555→    proposalPdfLabel: "الملخص التنفيذي (PDF)",
+   556→    openMenu: "افتح القائمة",
+   557→    closeMenu: "أغلق القائمة",
+   558→    langToggleAria: "التبديل إلى اللغة الإنجليزية",
+   559→  },
+   560→  hero: {
+   561→    badge: "عرض تمويل تأسيسي · 2026 · بإشراف طلابي وأكاديمي",
+   562→    headline: [
+   563→      { text: "نبني" },
+   564→      { text: "مستقبل", accent: true },
+   565→      { text: "مصر" },
+   566→      { text: "الكمومي", accent: true },
+   567→      { text: "اليوم" },
+   568→    ],
+   569→    subPre: "مختبر",
+   570→    subLab: "لأبحاث الكموم",
+   571→    subMid: "يقوده الطلاب ويسعى إلى",
+   572→    subPost:
+   573→      "من تمويل تأسيسي — حيث يحاكي الطلاب الواقع على عتاد كمومي حقيقي، في أول مختبر من نوعه في المنطقة.",
+   574→    ctaExplore: "استكشف العرض",
+   575→    ctaTeam: "تعرّف على الفريق",
+   576→    badges: [
+   577→      "مُقدَّم إلى ASRT · ITIDA",
+   578→      "شركاء كموميون عالميون",
+   579→      "نسخة المستثمر — 15 دقيقة",
+   580→    ],
+   581→    scroll: "مرّر",
+   582→    scrollAria: "انتقل إلى قسم المشكلة",
+   583→    circuitAria:
+   584→      "رسم دائرة كمومية: بوابة هادامارد على الكيوبت صفر، وبوابة CNOT تشبّك الكيوبتَين صفر وواحد، وقياس على كليهما",
+   585→    circuitCaption: "grover_bell.py · المعالج: ibm_torino · المحاولات: 1024",
+   586→  },
+   587→  problem: {
+   588→    eyebrow: "القسم 01 — المشكلة",
+   589→    title: "خط مواهب الكموم يفقد تماسكه",
+   590→    subtitle:
+   591→      "تتخرج مصر آلاف الطلاب المتميزين في العلوم والهندسة — فتفقد كل من لمس الكم تقريبًا. ليس لنقص الموهبة، بل لنقص المختبر.",
+   592→    funnelAria: "قمع المواهب: من الطلاب المسجلين إلى المسيرات التي تبقى في المنطقة",
+   593→    punchPre: "نقيس الموهبة. ",
+   594→    punchAccent: "ثم نفقدها.",
+   595→    decoTerm: "فقدان التماسك (اسم)",
+   596→    decoBody:
+   597→      "— ما يُدمِّر حالة كمومية قبل أن تُقاس. وهو أيضًا ما يحدث لأفضل طلابنا بين التخرج والفرصة.",
+   598→    stat300:
+   599→      "نمو في إعلانات الوظائف الكمومية عالميًا — منحنى الطلب شبه عمودي.",
+   600→    stat0:
+   601→      "مختبر كمومي عملي في الجامعات المصرية. صفر. مقعد الرواد ما يزال شاغرًا.",
+   602→    stat2300:
+   603→      "حالة يمكن لآلة بـ300 كيوبت تمثيلها — أكثر من عدد الذرات في الكون المرئي. ",
+   604→    stat2300Accent: "وطلابنا لم يلمسوا واحدة منها قط.",
+   605→  },
+   606→  solution: {
+   607→    eyebrow: "القسم 02 — الحل",
+   608→    title: "مختبر أبحاث الكموم",
+   609→    subtitle:
+   610→      "مختبر يقوده الطلاب ويشرف عليه أعضاء هيئة التدريس، يُجري فيه الطلاب محاكاة كمومية حقيقية وينشرون أبحاثًا حقيقية — الأول من نوعه في المنطقة.",
+   611→    imageAlt:
+   612→      "حاسوب كمومي ذهبي بثلاجة التبريد العميق — فئة العتاد التي يصل إليها طلابنا عبر السحابة",
+   613→    imageCaption: "الآلات التي نحاكي عليها — عتاد كمومي حقيقي",
+   614→    pillarsTitle: "ثلاث ركائز، مختبر واحد",
+   615→    pillarsNote: "متشابكة — كل ركيزة تُضاعف الأخريين",
+   616→    stackTitlePre: "منصتنا — ",
+   617→    stackTitleAccent: "عتاد حقيقي، اليوم",
+   618→    stackNote: "كل طبقة تعمل اليوم — بلا رأس مال",
+   619→    resultsTitlePre: "نتائج مُقيسة — ",
+   620→    resultsTitleAccent: "لا وعود",
+   621→  },
+   622→  methodology: {
+   623→    eyebrow: "القسم 03 — الدائرة",
+   624→    title: "دائرة الثلاث سنوات",
+   625→    subtitle:
+   626→      "مخرجات كل مرحلة هي مدخلات التي تليها — المراحل متشابكة. انقر أي مرحلة لتُسقط الدالة الموجية.",
+   627→    phaseAria: (id, name) => `تركيز على المرحلة ${id}: ${name}`,
+   628→    phaseBraKet: (id) => `|المرحلة ${id}⟩`,
+   629→    exitCriteria: (id) => `معايير إنهاء المرحلة ${id}`,
+   630→    activitiesAria: (id) => `أنشطة المرحلة ${id}`,
+   631→    quote: "«مخرَج كل مرحلة هو مدخَل التي تليها — المراحل متشابكة»",
+   632→  },
+   633→  budget: {
+   634→    askEyebrow: "المطلوب",
+   635→    askChips: ["18 شهرًا من الاستمرارية", "200 مسيرة مهنية", "مختبر رائد واحد"],
+   636→    askNote: "أقل من كلفة جناح مؤتمر واحد في السنة.",
+   637→    eyebrow: "القسم 04 — الميزانية",
+   638→    title: "إلى أين يذهب كل دولار",
+   639→    subtitle:
+   640→      "اسحب المنزلق وشاهد المختبر يتشكّل. نسب التوزيع مثبتة وفق الخطة المدقَّقة — الحلقة تُظهر أي جزء من المختبر الكامل يُشعله استثمارك.",
+   641→    donutAria: (pct) =>
+   642→      `رسم دائري: تمويل ${pct} بالمئة من مختبر الـ50,000 دولار الكامل`,
+   643→    legendAria: (label, pct, amt, desc) =>
+   644→      `${label}: ${pct} بالمئة، نحو ${amt}. ${desc}`,
+   645→    perStudent: (amt) => `≈ ${amt} / للطالب`,
+   646→    pctOfLab: (pct) => `${pct}% من المختبر الكامل`,
+   647→    sliderLabel: "اضبط حجم الاستثمار",
+   648→    sliderHint: (step) => `اسحب أو استخدم أسهم لوحة المفاتيح. الخطوة ${step}.`,
+   649→    scenariosTitle: "سيناريوهات «ماذا لو؟»",
+   650→    scenariosAria: "سيناريوهات تمويل جاهزة",
+   651→    scenarioBtn: (k, title) => `${k} · ${title}`,
+   652→    outcomeWith: (amount) => `بمبلغ ${amount}، `,
+   653→    outcomeZero:
+   654→      "يبقى المختبر في حالة تراكب — لا شيء ينهار إلى واقع.",
+   655→    // Arabic numeral agreement: 3–10 take the plural (عدد مذكر), the rest
+   656→    // take the singular accusative (تمييز منصوب) — e.g. 40 طالبًا / 5 أوراق.
+   657→    outcomeBody: (r) => {
+   658→      const count = (n: number, one: string, many: string) =>
+   659→        n >= 3 && n <= 10 ? `${n} ${many}` : `${n} ${one}`;
+   660→      return `يمكننا تدريب ${count(r.studentsTrained, "طالبًا", "طلاب")}، وإنجاز ${count(r.projectsCompleted, "مشروعًا بحثيًا", "مشاريع بحثية")}، ونشر ${count(r.publications, "ورقة محكَّمة", "أوراق محكَّمة")}، وتوقيع ${count(r.industryPartners, "شراكة صناعية", "شراكات صناعية")}.`;
+   661→    },
+   662→    roiTitle: "العائد على الاستثمار — بحلول السنة الثالثة",
+   663→    roiLabels: [
+   664→      "طلاب مدرَّبون",
+   665→      "مشاريع بحثية",
+   666→      "أوراق منشورة",
+   667→      "شركاء صناعيون",
+   668→      "هاكاثونات منظَّمة",
+   669→    ],
+   670→    promise: "وعد $1 → $100",
+   671→    promiseDetail: " — كل دولار تأسيسي يتراكم ليصبح نحو 100$ من القيمة المُنشأة بحلول 2036",
+   672→    promiseDetail2: " (علاوة المهارات + المنح اللاحقة + آثار المنظومة)",
+   673→    itemizedTitlePre: "تفصيل ",
+   674→    itemizedTitleAccent: "جاهز للتدقيق",
+   675→    itemizedSub:
+   676→      "تُطابَق التقارير الفصلية مع هذا الجدول بالضبط — توزيع الـ50,000 دولار كاملة.",
+   677→    colResource: "البند",
+   678→    colQty: "الكمية",
+   679→    colCost: "التكلفة",
+   680→    tableCaption: "الميزانية التفصيلية لطلب التمويل التأسيسي الكامل (خمسون ألف دولار)",
+   681→    totalSeed: "إجمالي التمويل",
+   682→    closing:
+   683→      "تمويلك ليس نموذج أعمالنا؛ إنه شرارتنا — والشرارات تشتعل مرة واحدة فقط.",
+   684→  },
+   685→  scoreboard: {
+   686→    eyebrow: "القسم 05 — لوحة النتائج",
+   687→    title: "السنة الثالثة، بالأرقام",
+   688→    subtitle:
+   689→      "لا نطلب منك تصديق رؤية؛ نطلب أن تحاسبنا على هذه الأرقام — فهي معايير قبول استثمارك.",
+   690→    tilesAria: "مخرجات مستهدفة بحلول السنة الثالثة",
+   691→    elsewhereTitle: "ماذا تشتري 50 ألف دولار عادةً؟",
+   692→    hereTitle: "ماذا تشتري 50 ألف دولار هنا؟",
+   693→    exchangeEyebrow: "سعر الصرف لعشر سنوات · 2026 → 2036",
+   694→    exchangeBodyPre: "كل دولار تأسيسي يتراكم ليصبح نحو ",
+   695→    exchangeAccent: "مئة دولار",
+   696→    exchangeBodyPost:
+   697→      " من القيمة المُنشأة — علاوة المهارات، والمنح اللاحقة، وآثار المنظومة.",
+   698→  },
+   699→  team: {
+   700→    eyebrow: "القسم 06 — الفريق",
+   701→    title: "خبرات متشابكة",
+   702→    subtitle:
+   703→      "15 طالبًا في دالة موجية واحدة — فيزيائيون ومهندسون ورياضيون، بقيادة من سيؤدون العمل بأنفسهم: الطلاب.",
+   704→    filtersAria: "تصفية أعضاء الفريق حسب التخصص",
+   705→    filters: {
+   706→      all: "الكل 15",
+   707→      leads: "القيادات",
+   708→      research: "البحث",
+   709→      tech: "التقنية",
+   710→      ops: "العمليات والفعاليات",
+   711→      media: "الإعلام والتصميم",
+   712→      open: "مقاعد شاغرة",
+   713→    },
+   714→    gridAria: "أعضاء الفريق",
+   715→    note: "منظومة متشابكة واحدة — القائمة الكاملة والصور متاحة عند الطلب",
+   716→    cta: "احجز مقعدًا مؤسِّسًا شاغرًا",
+   717→  },
+   718→  faq: {
+   719→    eyebrow: "القسم 07 — الأسئلة الشائعة",
+   720→    titlePre: "إجابات ",
+   721→    titleAccent: "مُقيسة",
+   722→    intro:
+   723→      "كل مموّل يسأل الأسئلة الثمانية نفسها. نفضّل إنهاء حالة عدم اليقين هنا بدلًا من الاجتماع — اقرأ، ثم أحضر الأسئلة الأصعب.",
+   724→    guaranteeTag: "<GUARANTEE />",
+   725→    guaranteeBody:
+   726→      "إذا بدا أي سؤال أعلاه عامًا، راسلنا وسنرسل لك جدول البيانات وراءه — ",
+   727→    guaranteeAccent: "فصليًا، موقَّعًا، ومفتوحًا",
+   728→    askDirect: "اسأل سؤالًا مباشرة",
+   729→    pdfPre: "تفضّل الورق؟ ",
+   730→    pdfAccent: "نزّل الملخص من صفحة واحدة",
+   731→    pdfMeta: "A4 · 276KB",
+   732→    observed: (n) =>
+   733→      `تمت الملاحظة: ${n} أسئلة · التراكب سليم: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
+   734→  },
+   735→  contact: {
+   736→    eyebrow: "القسم 08 — تواصل معنا",
+   737→    title: "أَسقِط الدالة الموجية",
+   738→    subtitle:
+   739→      "كل شراكة تبدأ كإشارة. أرسل إشارتك — تمويلًا أو تجارب صناعية أو أحد المقعدَين المؤسِّسيَّن الشاغرَين.",
+   740→    counterScanning: "جارٍ مسح الإشارات…",
+   741→    counter: (n) => {
+   742→      if (n === 0) return "ستكون القياس رقم 1";
+   743→      if (n === 1) return "إشارة واحدة مستلمة — ستكون القياس رقم 2";
+   744→      if (n === 2) return "إشارتان مستلمتان — ستكون القياس رقم 3";
+   745→      const unit = n <= 10 ? "إشارات" : "إشارة";
+   746→      return `${n} ${unit} مستلمة — ستكون القياس رقم ${n + 1}`;
+   747→    },
+   748→    name: "الاسم",
+   749→    namePh: "د. أحمد حسن",
+   750→    email: "البريد الإلكتروني",
+   751→    emailPh: "you@agency.org",
+   752→    org: "الجهة",
+   753→    orgOptional: "(اختياري)",
+   754→    orgPh: "ASRT · ITIDA · IBM · …",
+   755→    interest: "أهتم بـ",
+   756→    interestPh: "اختر القناة",
+   757→    interestOptions: [
+   758→      { value: "funding", label: "تمويل تأسيسي (50 ألف دولار)" },
+   759→      { value: "partnership", label: "شراكة صناعية" },
+   760→      { value: "join", label: "الانضمام للفريق (|0⟩ / |1⟩)" },
+   761→      { value: "other", label: "شيء آخر" },
+   762→    ],
+   763→    message: "الرسالة",
+   764→    messagePh: "أخبرنا كيف تودّ التشابك مع المختبر…",
+   765→    privacy: "مشفَّرة أثناء النقل · تُخزَّن في قاعدة بيانات مختبرنا فقط",
+   766→    responseTime: "متوسط زمن الرد: 48 ساعة",
+   767→    submit: "أرسل الإشارة",
+   768→    submitting: "جارٍ الإرسال…",
+   769→    honeypotLabel: "اترك هذا الحقل فارغًا",
+   770→    successTitle: "وصلت الإشارة",
+   771→    successBody:
+   772→      "انهار استفسارك في صفّ بقاعدة بيانات مختبرنا. سيردّ عليك إنسان (حقيقي، تحققنا) خلال 48 ساعة.",
+   773→    successBtn: "أرسل إشارة أخرى",
+   774→    toastTitle: "وصلت الإشارة ✅",
+   775→    toastDesc: "تحوّلت رسالتك إلى بريد في صندوقنا — نرد خلال 48 ساعة.",
+   776→    toastErrorTitle: "رصدنا فقدان تماسك",
+   777→    toastErrorDesc: "حاول مرة أخرى بعد لحظات.",
+   778→    rateLimited:
+   779→      "إشارات كثيرة من جهازك — تحتاج القناة إلى بعض الهدوء. حاول مجددًا لاحقًا.",
+   780→    zodName: "الاسم قصير جدًا — حرفان على الأقل",
+   781→    zodEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+   782→    zodMessage: "أخبرنا المزيد — 10 أحرف على الأقل",
+   783→  },
+   784→  newsletter: {
+   785→    title: "ابقَ متشابكًا",
+   786→    subtitle: "إشارة تقدُّم واحدة شهريًا — لا ضجيج، لا انهيار.",
+   787→    emailPh: "your@email.org",
+   788→    submit: "اشترك",
+   789→    submitting: "جارٍ الاشتراك…",
+   790→    count: (n) => {
+   791→      if (n === 0) return "كن أول من يشترك";
+   792→      if (n === 1) return "مشترك واحد على القائمة";
+   793→      if (n === 2) return "مشتركان على القائمة";
+   794→      const unit = n <= 10 ? "مشتركين" : "مشتركًا";
+   795→      return `${n} ${unit} على القائمة`;
+   796→    },
+   797→    toastTitle: "تم تثبيت كيوبتك ✅",
+   798→    toastDesc: "أنت على القائمة — الإشارة القادمة تصلك قريبًا.",
+   799→    toastDupTitle: "أنت متشابك أصلًا",
+   800→    toastDupDesc: "هذا البريد مشترك من قبل — التراكب محفوظ.",
+   801→    toastErrorTitle: "تعذّر الاشتراك",
+   802→    zodEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+   803→    honeypotLabel: "اترك هذا الحقل فارغًا",
+   804→  },
+   805→  footer: {
+   806→    ctaPre: "انضم إلى ",
+   807→    ctaAccent: "الثورة الكمومية",
+   808→    sub: "منذ ثلاث سنوات وهذا المختبر موجود في حالة تراكب — كل النتائج ممكنة في آن واحد. اليوم، أنت القياس.",
+   809→    reviewTerms: "استعرض الشروط",
+   810→    onePager: "ملخص PDF",
+   811→    onePagerAria: "نزّل الملخص التنفيذي من صفحة واحدة (A4)",
+   812→    terms: [
+   813→      "50,000 دولار — استثمار تأسيسي",
+   814→      "شراكة 3 سنوات — تقارير شفافية فصلية",
+   815→      "مخرجات بعلامة مشتركة — حقوق تسمية المختبر",
+   816→      "أولوية الاطلاع — على الخريجين الكموميين",
+   817→    ],
+   818→    termsAria: "شروط الشراكة",
+   819→    brand: "مختبر الجامعة لأبحاث الكموم",
+   820→    dept: "قسم الفيزياء · علوم الحاسب",
+   821→    transparency: ["تقارير فصلية", "مالية مفتوحة", "متوافق مع ASRT · ITIDA"],
+   822→    transparencyAria: "التزامات الشفافية",
+   823→    copyright: "© 2026 مختبر أبحاث الكموم — عرض تأسيسي · v1.0",
+   824→    madeWith: "صُنع بـ ❤️ من فريق أبحاث الكم — ",
+   825→    madeAccent: "حيث يحاكي الطلاب الواقع",
+   826→    socialsLabel: "حسابات التواصل",
+   827→    socialAria: (name) => `مختبر أبحاث الكموم على ${name}`,
+   828→  },
+   829→  misc: {
+   830→    backToTop: "العودة إلى الأعلى",
+   831→    heroSectionAria: "مقدمة",
+   832→    problemAria: "المشكلة",
+   833→    solutionAria: "الحل",
+   834→    methodologyAria: "خطة العمل",
+   835→    budgetAria: "حاسبة الميزانية",
+   836→    scoreboardAria: "لوحة نتائج السنة الثالثة",
+   837→    teamAria: "الفريق",
+   838→    faqAria: "الأسئلة الشائعة",
+   839→    contactAria: "تواصل مع المختبر",
+   840→    footerAria: "التواصل والشراكة",
+   841→  },
+   842→};
+   843→
+   844→/** The two amplitudes. Pick one per render via useLang().t */
+   845→export const COPY: Record<Lang, Copy> = { en, ar };
+   846→

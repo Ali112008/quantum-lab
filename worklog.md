@@ -122,3 +122,35 @@ Stage Summary:
 - Verification highlights: AR toggle persists across reload (localStorage qrl-lang); dir=rtl flips nav/menu/cards/tables/slider correctly; Cairo renders headings/body; budget interactions verified in BOTH languages; subscribe API all paths live-tested; localized toasts render (verified via ol.fixed viewport — note: [data-radix-toast-viewport] selector does NOT exist in this Radix version).
 - Risks/notes: lang flash on hard reload (EN paints first, saved AR applies post-hydration — standard for client-side i18n without cookies); rate limiter is per-IP in-memory and shares the "local" key between curl and browser tests in this sandbox (bursts may 429 during dev testing; production keys differ); newsletter has no double opt-in (fine for MVP); one-pager PDF remains EN-only (candidate for AR version next).
 - Next-phase recommendations (priority): 1) Arabic one-page PDF proposal (mirror of the EN one-pager with RTL layout); 2) admin inbox / email digest for inquiries+subscribers (platform constraint: only / route user-visible — consider basic-auth API or cron digest); 3) NEXT_PUBLIC_SITE_URL deploy wiring for OG/sitemap; 4) team photos for the 13 real members; 5) consider html lang pass on server via cookie for zero-flash i18n.
+
+---
+Task ID: 5
+Agent: Z.ai Code (cron webDevReview round 4)
+Task: Assess status, QA via agent-browser, then add new features (interactive qubit simulator + Arabic PDF + zero-flash i18n + styling detail pass).
+
+Work Log:
+- QA regression (agent-browser, desktop 1440x900 + mobile 390x844, EN+AR): all 9 anchors present; budget $10K preset (donut+ROI sentence) PASS; FAQ single-open accordion PASS; team Research filter (2 cards) PASS; mobile RTL hamburger PASS; localStorage lang persistence PASS. Zero console/page errors, dev.log clean. No bugs found this round. One transient during development (FAQ `lang` destructure landed one commit after PROPOSAL_PDFS usage) — resolved immediately; fresh-session console verified clean.
+- MAJOR FEATURE — SECTION 04 "TRY QUANTUM" (id=playground), the second showstopper:
+  - src/lib/quantum.ts: dependency-free single-qubit engine — Complex type + arithmetic, QubitState, 5 gates (H/X/Z/S/T) as 2x2 unitaries with bilingual names/blurbs, applyGate with renormalization, Born-rule probabilities, sampleOnce, Bloch coords (x,y,z), relativePhase, 5 famous-state presets (|0⟩ |1⟩ |+⟩ |−⟩ |+i⟩), U+2212 typographic minus in cformat.
+  - src/components/Playground.tsx: Bloch disc SVG (constant-length rotating vector w/ spring + pulse-glow tip, equator hint, |0⟩/|1⟩ poles, P(0) gradient shading via clip-path), phase dial (relative-phase needle, dimmed when |β|≈0), animated probability bars, mono amplitude readout (dir=ltr), 5 gate buttons with hover/focus blurb panel + per-gate accent colors, animated circuit wire with gate chips (9-window + overflow counter + pulsing measure terminal), presets, Measure-once (collapse + AnimatePresence flash + aria-live) / 100-shots histogram (non-destructive) / Undo (32-deep snapshot stack) / Reset, pedagogy footer tying the toy to Phase-1 training + IBM hardware.
+  - Math verified live: X→|1⟩ (P=100%), H|1⟩=(0.71,−0.71), shots on |+⟩ → 56/44, measure collapses to |0⟩ with flash, undo restores pre-measurement state. Verified EN + AR (RTL, localized gate names).
+- Section renumbering: Playground = 04 → Budget 05, Scoreboard 06, Team 07, FAQ 08, Contact 09 (EN+AR eyebrows); NAV_LINKS gained {#playground, Playground/جرّب الكم}; misc.playgroundAria added; page.tsx assembly + divider accents.
+- MAJOR FEATURE — Arabic one-page PDF proposal (RTL mirror of the EN one-pager):
+  - download/proposal/build-ar-onepager.py: generator embedding base64 Cairo variable font (arabic+latin subsets reused from .next next/font cache — no CDN needed); dir=rtl with mirrored decor (circuit top-left), logical border sides, padding-right bullets, .ltr isolate spans for $ amounts/tech tokens; same brand system/A4 794x1123.
+  - Fit-to-A4: 27 CSS metric trims (Cairo renders taller than Inter) — html2poster measured exactly 794x1123.
+  - pdf_qa: PASS after rephrasing 3 stat captions (em-dash line-start false-positive-proof) + pymupdf metadata (Title/Author/Creator). Output: public/proposal/quantum-lab-one-pager-ar.pdf (681KB, 1 page).
+  - Wiring: data.ts PROPOSAL_PDF → PROPOSAL_PDFS {en,ar} with per-lang download filenames; Navbar (desktop icon + mobile row), FAQ guarantee card, Footer CTA now serve the file matching the UI language; AR faq.pdfMeta "A4 · 681KB".
+- FEATURE — Zero-flash i18n via lang cookie:
+  - LanguageProvider: `initialLang` prop (seeded from server), writeLangCookie (qrl-lang, 1y, samesite=lax) on every change; localStorage still wins post-mount if it disagrees.
+  - layout.tsx: async RootLayout + getInitialLang() reading cookies() → <html lang dir> server-rendered; static `metadata` converted to async generateMetadata with cookie-localized title. curl proof: Cookie qrl-lang=ar → raw SSR HTML `<html lang="ar" dir="rtl">` + Arabic <title> (no EN flash). Route now dynamic (acceptable for this page).
+- STYLING DETAIL PASS:
+  - globals.css: keyboard-only `a:focus-visible` measurement-glow outline (WCAG 2.4.7; controls keep shadcn rings); `.noise-veil` fixed film-grain (SVG feTurbulence data-URI, opacity .035, mix-blend overlay, z-1 between canvas and content, zero JS). NOTE: rules inside `@layer base` with the data-URI silently failed to compile — moved to unlayered end-of-file block (verified in compiled CSS + computed styles).
+  - page.tsx: noise-veil div over QuantumBackground.
+  - Navbar mobile panel: /95+blur-md → /[0.98]+blur-xl + cyan ambient shadow (no more page bleed-through).
+- bun run lint clean; final agent-browser sweep zero errors (fresh session, EN+AR); both PDF endpoints 200.
+
+Stage Summary:
+- Status: stable, MVP*4 — 12 sections now incl. a real interactive qubit simulator; bilingual end-to-end with zero-flash server-rendered i18n; bilingual print-ready A4 proposals; hardened fullstack inquiry+newsletter pipelines; SEO/OG/sitemap.
+- Verification highlights: quantum math live-verified (H/X/Born-rule statistics/collapse/undo); SSR cookie proof via curl; pdf_qa PASS; mobile menu + RTL regressions pass in both languages.
+- Risks/notes: cookies() makes the route dynamic (fine for a landing page; could pre-render with a middleware-based i18n later); quantum.ts is display-grade not cryptographic (renormalized after each gate — drift-safe); Arabic PDF font subsets come from the next/font cache — if the cache is cleared, re-run build-ar-onepager.py after a dev-server font fetch; playground undo stack capped at 32.
+- Next-phase recommendations (priority): 1) two-qubit playground extension (CNOT + Bell state) — natural evolution of SECTION 04; 2) admin email digest cron for inquiries/subscribers (platform constraint: only / visible — use basic-auth API); 3) team photos for the 13 real members; 4) playwright smoke suite to lock the regression checklist; 5) NEXT_PUBLIC_SITE_URL deploy wiring when a real domain exists.

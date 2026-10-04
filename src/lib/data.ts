@@ -502,8 +502,11 @@ export const YEAR3_OUTCOMES = [
 
 export const LAB_EMAIL = "quantum.lab@university.edu.eg";
 
-/** Downloadable one-page PDF proposal (print-ready A4, matches site branding). */
-export const PROPOSAL_PDF = "/proposal/quantum-lab-one-pager.pdf";
+/** Downloadable one-page PDF proposals (print-ready A4, matches site branding). */
+export const PROPOSAL_PDFS = {
+  en: { href: "/proposal/quantum-lab-one-pager.pdf", download: "QRL-Lab-Seed-Proposal.pdf" },
+  ar: { href: "/proposal/quantum-lab-one-pager-ar.pdf", download: "QRL-Lab-Seed-Proposal-AR.pdf" },
+} as const;
 
 /** SECTION 07 — FAQ. Every question a funder asks, with honest answers. */
 export const FAQ_ITEMS = [
@@ -578,6 +581,7 @@ export const NAV_LINKS = [
   { href: "#problem", label: l("Problem", "المشكلة") },
   { href: "#solution", label: l("Solution", "الحل") },
   { href: "#methodology", label: l("Methodology", "خطة العمل") },
+  { href: "#playground", label: l("Playground", "جرّب الكم") },
   { href: "#budget", label: l("Budget", "الميزانية") },
   { href: "#team", label: l("Team", "الفريق") },
   { href: "#faq", label: l("FAQ", "الأسئلة الشائعة") },

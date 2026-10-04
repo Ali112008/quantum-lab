@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Inter, Montserrat, Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { LanguageProvider } from "@/lib/LanguageProvider";
+import { PAGE_TITLES, isLang, type Lang } from "@/lib/i18n";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,12 +31,24 @@ const cairo = Cairo({
 export const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title:
-    "Quantum Research Lab — Building Egypt's Quantum Future | $50K Seed Proposal",
-  description:
-    "A student-led, faculty-mentored Quantum Research Laboratory seeking $50,000 in seed funding. 200 quantum-fluent graduates, 15 research projects, and the region's first student quantum hub — in three years.",
+/**
+ * Server-side language collapse: read the qrl-lang cookie written by the
+ * LanguageProvider so the FIRST paint already carries the right lang/dir
+ * and copy — returning Arabic readers see no English flash (zero-flash i18n).
+ */
+async function getInitialLang(): Promise<Lang> {
+  const store = await cookies();
+  const value = store.get("qrl-lang")?.value;
+  return isLang(value) ? value : "en";
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getInitialLang();
+  return {
+    metadataBase: new URL(siteUrl),
+    title: PAGE_TITLES[lang],
+    description:
+      "A student-led, faculty-mentored Quantum Research Laboratory seeking $50,000 in seed funding. 200 quantum-fluent graduates, 15 research projects, and the region's first student quantum hub — in three years.",
   alternates: {
     canonical: "/",
   },
@@ -86,7 +100,8 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-};
+  };
+}
 
 /** Structured data — helps funding agencies & search engines index the lab */
 const jsonLd = {
@@ -115,18 +130,25 @@ const jsonLd = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Collapse the language server-side from the persisted cookie.
+  const lang = await getInitialLang();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang={lang}
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      suppressHydrationWarning
+    >
       <body
         className={`${inter.variable} ${montserrat.variable} ${cairo.variable} antialiased bg-background text-foreground`}
       >
-        {/* Language observer — collapses every L10n string to |EN⟩ or |AR⟩ */}
-        <LanguageProvider>
+        {/* Language observer — collapses every L10n string to |EN⟩ or |AR⟩,
+            seeded from the cookie so the first paint already speaks AR. */}
+        <LanguageProvider initialLang={lang}>
           {/* Accessibility: skip straight to content, WCAG 2.1 §2.4.1 */}
           <a
             href="#main-content"

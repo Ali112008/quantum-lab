@@ -76,6 +76,35 @@ export interface Copy {
     activitiesAria: (id: number) => string;
     quote: string;
   };
+  playground: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    blochAria: string;
+    phaseLabel: string;
+    stateLabel: string;
+    prob0Label: string;
+    prob1Label: string;
+    gatesTitle: string;
+    gatesHint: string;
+    circuitTitle: string;
+    emptyCircuit: string;
+    presetsTitle: string;
+    presetAria: (label: string) => string;
+    gateAria: (name: string) => string;
+    undo: string;
+    reset: string;
+    measure: string;
+    shots: string;
+    controlsAria: string;
+    resultAria: string;
+    collapsedTo: (outcome: string) => string;
+    shotsSummary: (zeros: number, ones: number) => string;
+    histogramNote: string;
+    pedagogyPre: string;
+    pedagogyAccent: string;
+    pedagogyPost: string;
+  };
   budget: {
     askEyebrow: string;
     askChips: string[];
@@ -227,6 +256,7 @@ export interface Copy {
     problemAria: string;
     solutionAria: string;
     methodologyAria: string;
+    playgroundAria: string;
     budgetAria: string;
     scoreboardAria: string;
     teamAria: string;
@@ -334,11 +364,42 @@ const en: Copy = {
     quote:
       "“each phase output is the next phase input — the phases are entangled”",
   },
+  playground: {
+    eyebrow: "SECTION 04 — TRY QUANTUM",
+    title: "Play With A Real Qubit",
+    subtitle:
+      "Not a video — a live single-qubit simulator running in your browser, on the same math our students master in Phase 1. Apply gates, watch the Bloch sphere, then measure. Go collapse something.",
+    blochAria: "Bloch disc showing the current qubit state",
+    phaseLabel: "RELATIVE PHASE φ",
+    stateLabel: "STATE VECTOR",
+    prob0Label: "P(measure 0)",
+    prob1Label: "P(measure 1)",
+    gatesTitle: "Gate rack",
+    gatesHint: "Click a gate to apply it — hover for the intuition.",
+    circuitTitle: "Circuit wire",
+    emptyCircuit: "─ wire idle · apply a gate ─",
+    presetsTitle: "Famous states",
+    presetAria: (label) => `Load the state ${label}`,
+    gateAria: (name) => `Apply the ${name} gate`,
+    undo: "Undo",
+    reset: "Reset",
+    measure: "Measure once",
+    shots: "Run 100 shots",
+    controlsAria: "Qubit controls",
+    resultAria: "Measurement results",
+    collapsedTo: (o) => `Measured |${o}⟩ — the superposition collapsed. Undo restores it.`,
+    shotsSummary: (zeros, ones) => `${zeros}× |0⟩ · ${ones}× |1⟩ — out of 100 shots`,
+    histogramNote: "Non-destructive sampling: your state survives the statistics.",
+    pedagogyPre: "This is the ",
+    pedagogyAccent: "Phase-1 training engine",
+    pedagogyPost:
+      " — the same linear algebra as Qiskit's Statevector, shrunk into a browser tab. Fund the lab and 200 students will run it on real IBM Quantum hardware.",
+  },
   budget: {
     askEyebrow: "The Ask",
     askChips: ["18 months of runway", "200 careers launched", "1 first-mover lab"],
     askNote: "Less than the cost of one conference booth per year.",
-    eyebrow: "SECTION 04 — BUDGET",
+    eyebrow: "SECTION 05 — BUDGET",
     title: "Where Every Dollar Goes",
     subtitle:
       "Drag the slider and watch the lab take shape. Allocation proportions are locked to the audited plan — the ring shows how much of the full lab your investment ignites.",
@@ -384,7 +445,7 @@ const en: Copy = {
       "Your seed is not our business model. It is our ignition — and ignitions only fire once.",
   },
   scoreboard: {
-    eyebrow: "SECTION 05 — THE SCOREBOARD",
+    eyebrow: "SECTION 06 — THE SCOREBOARD",
     title: "Year 3, Measured",
     subtitle:
       "We do not ask you to believe a vision. We ask you to hold us to these numbers — they are the acceptance criteria of your investment.",
@@ -398,7 +459,7 @@ const en: Copy = {
       " of created value — skills premium, follow-on grants, and ecosystem effects.",
   },
   team: {
-    eyebrow: "SECTION 06 — THE TEAM",
+    eyebrow: "SECTION 07 — THE TEAM",
     title: "Entangled Expertise",
     subtitle:
       "15 students, one wavefunction — physicists, engineers, and mathematicians led by the people who will do the work: the students themselves.",
@@ -417,7 +478,7 @@ const en: Copy = {
     cta: "Claim an open founding seat",
   },
   faq: {
-    eyebrow: "SECTION 07 — FAQ",
+    eyebrow: "SECTION 08 — FAQ",
     titlePre: "Measured ",
     titleAccent: "Answers",
     intro:
@@ -434,7 +495,7 @@ const en: Copy = {
       `OBSERVED: ${n} QUESTIONS · SUPERPOSITION INTACT: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
   },
   contact: {
-    eyebrow: "SECTION 08 — MAKE CONTACT",
+    eyebrow: "SECTION 09 — MAKE CONTACT",
     title: "Collapse the Wavefunction",
     subtitle:
       "Every partnership starts as a signal. Send yours — funding, industry pilots, or one of the two open founding seats.",
@@ -524,6 +585,7 @@ const en: Copy = {
     problemAria: "The problem",
     solutionAria: "The solution",
     methodologyAria: "Methodology",
+    playgroundAria: "Interactive qubit playground",
     budgetAria: "Budget calculator",
     scoreboardAria: "Year three scoreboard",
     teamAria: "The team",
@@ -630,11 +692,42 @@ const ar: Copy = {
     activitiesAria: (id) => `أنشطة المرحلة ${id}`,
     quote: "«مخرَج كل مرحلة هو مدخَل التي تليها — المراحل متشابكة»",
   },
+  playground: {
+    eyebrow: "القسم 04 — جرّب الكم",
+    title: "جرّب كيوبيتًا حقيقيًا",
+    subtitle:
+      "ليست مقطعًا مرئيًا — إنها محاكاة حية لكيوبيت واحد تعمل في متصفحك، بالرياضيات نفسها التي يتقنها طلابنا في المرحلة الأولى. طبّق البوابات، راقب كرة بلوخ، ثم قِس. أسقِط شيئًا ما.",
+    blochAria: "قرص بلوخ يعرض حالة الكيوبيت الحالية",
+    phaseLabel: "الطور النسبي φ",
+    stateLabel: "متجه الحالة",
+    prob0Label: "احتمال قياس 0",
+    prob1Label: "احتمال قياس 1",
+    gatesTitle: "رف البوابات",
+    gatesHint: "انقر بوابة لتطبيقها — مرّر المؤشر لتفهم أثرها.",
+    circuitTitle: "سلك الدائرة",
+    emptyCircuit: "─ السلك خالٍ · طبّق بوابة ─",
+    presetsTitle: "حالات شهيرة",
+    presetAria: (label) => `تحميل الحالة ${label}`,
+    gateAria: (name) => `تطبيق بوابة ${name}`,
+    undo: "تراجع",
+    reset: "إعادة",
+    measure: "قِس مرة",
+    shots: "100 قياس",
+    controlsAria: "أدوات التحكم بالكيوبيت",
+    resultAria: "نتائج القياس",
+    collapsedTo: (o) => `النتيجة |${o}⟩ — انسحب التراكب. «تراجع» يعيد الحالة.`,
+    shotsSummary: (zeros, ones) => `${zeros} مرة |0⟩ · ${ones} مرة |1⟩ — من أصل 100 قياس`,
+    histogramNote: "أخذ عينات غير مُدمِّر: حالتك تنجو من الإحصاء.",
+    pedagogyPre: "هذه ",
+    pedagogyAccent: "محرك تدريب المرحلة الأولى",
+    pedagogyPost:
+      " — نفس الجبر الخطي في Statevector من Qiskit، مضغوط في تبويب متصفح. موّل المختبر ليشغّلها 200 طالب على عتاد IBM Quantum الحقيقي.",
+  },
   budget: {
     askEyebrow: "المطلوب",
     askChips: ["18 شهرًا من الاستمرارية", "200 مسيرة مهنية", "مختبر رائد واحد"],
     askNote: "أقل من كلفة جناح مؤتمر واحد في السنة.",
-    eyebrow: "القسم 04 — الميزانية",
+    eyebrow: "القسم 05 — الميزانية",
     title: "إلى أين يذهب كل دولار",
     subtitle:
       "اسحب المنزلق وشاهد المختبر يتشكّل. نسب التوزيع مثبتة وفق الخطة المدقَّقة — الحلقة تُظهر أي جزء من المختبر الكامل يُشعله استثمارك.",
@@ -683,7 +776,7 @@ const ar: Copy = {
       "تمويلك ليس نموذج أعمالنا؛ إنه شرارتنا — والشرارات تشتعل مرة واحدة فقط.",
   },
   scoreboard: {
-    eyebrow: "القسم 05 — لوحة النتائج",
+    eyebrow: "القسم 06 — لوحة النتائج",
     title: "السنة الثالثة، بالأرقام",
     subtitle:
       "لا نطلب منك تصديق رؤية؛ نطلب أن تحاسبنا على هذه الأرقام — فهي معايير قبول استثمارك.",
@@ -697,7 +790,7 @@ const ar: Copy = {
       " من القيمة المُنشأة — علاوة المهارات، والمنح اللاحقة، وآثار المنظومة.",
   },
   team: {
-    eyebrow: "القسم 06 — الفريق",
+    eyebrow: "القسم 07 — الفريق",
     title: "خبرات متشابكة",
     subtitle:
       "15 طالبًا في دالة موجية واحدة — فيزيائيون ومهندسون ورياضيون، بقيادة من سيؤدون العمل بأنفسهم: الطلاب.",
@@ -716,7 +809,7 @@ const ar: Copy = {
     cta: "احجز مقعدًا مؤسِّسًا شاغرًا",
   },
   faq: {
-    eyebrow: "القسم 07 — الأسئلة الشائعة",
+    eyebrow: "القسم 08 — الأسئلة الشائعة",
     titlePre: "إجابات ",
     titleAccent: "مُقيسة",
     intro:
@@ -728,12 +821,12 @@ const ar: Copy = {
     askDirect: "اسأل سؤالًا مباشرة",
     pdfPre: "تفضّل الورق؟ ",
     pdfAccent: "نزّل الملخص من صفحة واحدة",
-    pdfMeta: "A4 · 276KB",
+    pdfMeta: "A4 · 681KB",
     observed: (n) =>
       `تمت الملاحظة: ${n} أسئلة · التراكب سليم: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
   },
   contact: {
-    eyebrow: "القسم 08 — تواصل معنا",
+    eyebrow: "القسم 09 — تواصل معنا",
     title: "أَسقِط الدالة الموجية",
     subtitle:
       "كل شراكة تبدأ كإشارة. أرسل إشارتك — تمويلًا أو تجارب صناعية أو أحد المقعدَين المؤسِّسيَّن الشاغرَين.",
@@ -832,6 +925,7 @@ const ar: Copy = {
     problemAria: "المشكلة",
     solutionAria: "الحل",
     methodologyAria: "خطة العمل",
+    playgroundAria: "ملعب الكيوبيت التفاعلي",
     budgetAria: "حاسبة الميزانية",
     scoreboardAria: "لوحة نتائج السنة الثالثة",
     teamAria: "الفريق",

@@ -290,3 +290,25 @@ html[dir="rtl"] .text-glow-green {
     0 0 60px rgba(0, 217, 255, 0.18);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Interaction & atmosphere layer (unlayered = highest priority)       */
+/* ------------------------------------------------------------------ */
+/* Keyboard-only focus halo — anchors answer Tab with a visible
+   measurement glow (WCAG 2.1 §2.4.7). Controls keep their own rings. */
+a:focus-visible {
+  outline: 2px solid rgba(0, 217, 255, 0.85);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+/* Film-grain noise texture — a faint quantum vacuum flicker over the
+   page (fixed, non-interactive, between the particle canvas and the
+   content). Pure CSS: zero JS, zero layout cost. */
+.noise-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}

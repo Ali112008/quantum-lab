@@ -16,7 +16,7 @@ import {
   Loader2,
   Waves,
 } from "lucide-react";
-import { LAB_EMAIL, PROPOSAL_PDF } from "@/lib/data";
+import { LAB_EMAIL, PROPOSAL_PDFS } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -157,7 +157,7 @@ function NewsletterForm() {
 }
 
 export default function Footer() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   return (
     <footer id="footer" className="relative mt-auto border-t border-quantum-blue/10" aria-label={t.misc.footerAria}>
@@ -209,8 +209,8 @@ export default function Footer() {
               {t.footer.reviewTerms}
             </motion.a>
             <motion.a
-              href={PROPOSAL_PDF}
-              download="QRL-Lab-Seed-Proposal.pdf"
+              href={PROPOSAL_PDFS[lang].href}
+              download={PROPOSAL_PDFS[lang].download}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               aria-label={t.footer.onePagerAria}

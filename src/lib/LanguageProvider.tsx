@@ -21,8 +21,12 @@ import { COPY, type Copy } from "@/lib/copy";
 
 /**
  * Language context — the observer that collapses every L10n string
- * into |EN⟩ or |AR⟩. Persists the choice, mirrors it onto
- * <html lang dir> (RTL for Arabic), and swaps the document title.
+ * into |EN⟩ or |AR⟩. Persists the choice (cookie + localStorage),
+ * mirrors it onto <html lang dir> (RTL for Arabic), and swaps the title.
+ *
+ * Zero-flash: the server reads the cookie in layout.tsx and passes the
+ * persisted language as `initialLang`, so the very first paint already
+ * speaks the right language — no EN flash before hydration.
  */
 
 interface LangContextValue {
@@ -38,26 +42,42 @@ interface LangContextValue {
 
 const LangContext = createContext<LangContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  // Default EN — matches the server-rendered markup, so hydration is stable.
-  // The saved preference (if any) takes over right after mount.
-  const [lang, setLang] = useState<Lang>("en");
+/** Mirror the language onto a long-lived cookie so the server can read it. */
+function writeLangCookie(lang: Lang) {
+  try {
+    document.cookie = `${STORAGE_KEY}=${lang}; path=/; max-age=31536000; samesite=lax`;
+  } catch {
+    /* cookies disabled — localStorage still carries the preference */
+  }
+}
 
-  // Hydrate the persisted choice once. Deferred by a tick so the server
-  // markup (EN) paints first — no hydration mismatch — then the saved
-  // language collapses the superposition.
+export function LanguageProvider({
+  children,
+  initialLang = "en",
+}: {
+  children: ReactNode;
+  /** Cookie-provided language from the server render (zero-flash). */
+  initialLang?: Lang;
+}) {
+  // Start from the server-provided language so SSR markup, hydration, and
+  // the cookie all describe the same world — no superposition flicker.
+  const [lang, setLang] = useState<Lang>(initialLang);
+
+  // Reconcile with localStorage once: it wins over the cookie for a
+  // returning client that switched language in a previous session
+  // (e.g. cookie blocked, or preference newer than the cookie).
   useEffect(() => {
     let saved: string | null = null;
     try {
       saved = window.localStorage.getItem(STORAGE_KEY);
     } catch {
-      /* private mode — superposition stays */
+      /* private mode — cookie remains the source of truth */
     }
-    if (isLang(saved)) {
+    if (isLang(saved) && saved !== initialLang) {
       const id = window.setTimeout(() => setLang(saved as Lang), 0);
       return () => window.clearTimeout(id);
     }
-  }, []);
+  }, [initialLang]);
 
   // Reflect language onto the document: dir, lang, title, persistence.
   useEffect(() => {
@@ -70,6 +90,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    writeLangCookie(lang);
 
     // Next.js re-asserts the SSR <title> after hydration — guard it so the
     // document title always speaks the active language (no infinite loop:
