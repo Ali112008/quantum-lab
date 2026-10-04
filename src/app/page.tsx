@@ -6,6 +6,7 @@ import Methodology from "@/components/Methodology";
 import BudgetCalculator from "@/components/BudgetCalculator";
 import Scoreboard from "@/components/Scoreboard";
 import Team from "@/components/Team";
+import FAQ from "@/components/FAQ";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import QuantumBackground from "@/components/ui/QuantumBackground";
@@ -14,7 +15,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 
 /**
  * Single-page landing for the University Quantum Research Lab.
- * One wavefunction, ten sections, smooth scroll.
+ * One wavefunction, eleven sections, smooth scroll.
  */
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="relative z-10 flex-1">
+      <main id="main-content" className="relative z-10 flex-1">
         <Hero />
         <QuantumTicker />
         <Problem />
@@ -33,6 +34,7 @@ export default function Home() {
         <BudgetCalculator />
         <Scoreboard />
         <Team />
+        <FAQ />
         <ContactSection />
       </main>
 

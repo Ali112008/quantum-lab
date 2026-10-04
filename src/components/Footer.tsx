@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Atom, Linkedin, Twitter, Github, Mail, Handshake, FileText, Eye } from "lucide-react";
-import { LAB_EMAIL } from "@/lib/data";
+import { Atom, Linkedin, Twitter, Github, Mail, Handshake, FileText, Eye, FileDown } from "lucide-react";
+import { LAB_EMAIL, PROPOSAL_PDF } from "@/lib/data";
 import { quantumVariants, staggerContainer, scaleIn, viewport } from "@/lib/animations";
 
 /** Partnership terms from the closing slide of the deck */
@@ -69,6 +69,17 @@ export default function Footer() {
             >
               <Handshake className="size-4" aria-hidden="true" />
               Review the Terms
+            </motion.a>
+            <motion.a
+              href={PROPOSAL_PDF}
+              download="QRL-Lab-Seed-Proposal.pdf"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label="Download the one-page proposal PDF (A4)"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-transparent px-7 py-4 font-heading font-bold text-quantum-subtle transition-all hover:text-quantum-blue hover:border-quantum-blue/50"
+            >
+              <FileDown className="size-4" aria-hidden="true" />
+              One-Page PDF
             </motion.a>
           </motion.div>
         </motion.div>

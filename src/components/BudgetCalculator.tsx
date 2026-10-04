@@ -258,7 +258,7 @@ export default function BudgetCalculator() {
                 </span>
                 {amount === 0
                   ? "the lab stays in superposition — nothing collapses into reality."
-                  : `we can train ${roi.studentsTrained} students, complete ${roi.projectsCompleted} research projects, publish ${roi.publications} papers, and sign ${roi.industryPartners} industry partnership${roi.industryPartners === 1 ? "" : "s"}.`}
+                  : `we can train ${roi.studentsTrained} students, complete ${roi.projectsCompleted} research project${roi.projectsCompleted === 1 ? "" : "s"}, publish ${roi.publications} peer-reviewed paper${roi.publications === 1 ? "" : "s"}, and sign ${roi.industryPartners} industry partnership${roi.industryPartners === 1 ? "" : "s"}.`}
               </motion.p>
             </AnimatePresence>
           </div>

@@ -16,11 +16,19 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+/** Canonical site URL — override with NEXT_PUBLIC_SITE_URL at deploy time. */
+export const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title:
     "Quantum Research Lab — Building Egypt's Quantum Future | $50K Seed Proposal",
   description:
     "A student-led, faculty-mentored Quantum Research Laboratory seeking $50,000 in seed funding. 200 quantum-fluent graduates, 15 research projects, and the region's first student quantum hub — in three years.",
+  alternates: {
+    canonical: "/",
+  },
   keywords: [
     "quantum computing",
     "quantum research lab",
@@ -49,12 +57,21 @@ export const metadata: Metadata = {
     siteName: "Quantum Research Lab",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/images/og-cover.png",
+        width: 1344,
+        height: 768,
+        alt: "Glowing quantum particle network above a circuit board — Quantum Research Lab seed proposal",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Quantum Research Lab — Seed Proposal 2026",
     description:
       "Student-led quantum research lab seeking $50,000. Where students simulate reality.",
+    images: ["/images/og-cover.png"],
   },
   robots: {
     index: true,
@@ -99,6 +116,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${montserrat.variable} antialiased bg-background text-foreground`}
       >
+        {/* Accessibility: skip straight to content, WCAG 2.1 §2.4.1 */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-quantum-blue focus:px-4 focus:py-2.5 focus:font-heading focus:text-sm focus:font-bold focus:text-quantum-navy focus:shadow-[0_0_24px_rgba(0,217,255,0.5)]"
+        >
+          Skip to main content
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

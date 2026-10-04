@@ -38,6 +38,8 @@ const formSchema = z.object({
     .trim()
     .min(10, "Tell us a little more — at least 10 characters")
     .max(2000),
+  /** Honeypot — hidden from humans; must stay empty. */
+  website: z.string().max(0).optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -107,6 +109,7 @@ export default function ContactSection() {
       email: "",
       interest: "funding",
       message: "",
+      website: "",
     },
   });
 
@@ -148,7 +151,7 @@ export default function ContactSection() {
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="SECTION 07 — MAKE CONTACT"
+          eyebrow="SECTION 08 — MAKE CONTACT"
           title="Collapse the Wavefunction"
           subtitle="Every partnership starts as a signal. Send yours — funding, industry pilots, or one of the two open founding seats."
         />
@@ -316,6 +319,18 @@ export default function ContactSection() {
                   </div>
 
                   <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                    {/* Honeypot: invisible to humans & screen readers, in the
+                        tab order of no one. Bots that fill it are silently dropped. */}
+                    <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+                      <label htmlFor="website">Leave this field empty</label>
+                      <input
+                        id="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        {...register("website")}
+                      />
+                    </div>
                     <p className="font-mono text-[11px] text-quantum-subtle flex items-center gap-2">
                       <Activity className="size-3.5 text-quantum-green" aria-hidden="true" />
                       avg. response time: 48h

@@ -476,11 +476,51 @@ export const YEAR3_OUTCOMES = [
 
 export const LAB_EMAIL = "quantum.lab@university.edu.eg";
 
+/** Downloadable one-page PDF proposal (print-ready A4, matches site branding). */
+export const PROPOSAL_PDF = "/proposal/quantum-lab-one-pager.pdf";
+
+/** SECTION 07 — FAQ. Every question a funder asks, with honest answers. */
+export const FAQ_ITEMS = [
+  {
+    q: "Why does a quantum lab only need $50,000?",
+    a: "Because we rent the quantum computers instead of building them. A physical cleanroom would cost $10M+ — cloud access to IBM Quantum and AWS Braket delivers the same real-hardware research for the price of a conference booth. The full ask is itemized line-by-line in the budget table above.",
+  },
+  {
+    q: "Why students — and why now?",
+    a: "Quantum job postings grew 300% globally while Egyptian universities graduated thousands of physics and CS students with zero practical quantum training. Hardware time is purchasable today; the talent window compounds every semester we wait. First mover isn't a slogan — it's a hiring pipeline.",
+  },
+  {
+    q: "How will the money be audited?",
+    a: "Every line item is pre-priced and published on this page. You receive quarterly reconciliation reports against that exact table, open finances, and named signatories. No blockchains needed — just quarterly receipts and a standing invitation to visit the lab.",
+  },
+  {
+    q: "What hardware will students actually touch?",
+    a: "IBM Quantum premium access (12 months, ibm_torino-class processors), AWS Braket simulation credits, and two GPU workstations for local circuit simulation. Students run real superconducting hardware from day one through Qiskit — the same stack used by 60% of published quantum experiments.",
+  },
+  {
+    q: "What happens if a phase slips?",
+    a: "Each phase has written exit criteria that gate the next one, and an 8% contingency reserve ($4,000) absorbs shocks. If a milestone slips, the report says so — and the plan re-sequences around it. You'll never discover a delay after the fact.",
+  },
+  {
+    q: "What happens after the 36 months?",
+    a: "Sustainability was engineered in from day one: industry partnerships signed in Phase 2, follow-on grants (ASRT, ITIDA, Erasmus+), an alumni hiring pipeline companies pay to access, and co-branded outcomes. The seed ignites the engine — the engine then funds itself.",
+  },
+  {
+    q: "Who owns the research and the IP?",
+    a: "Students are first authors on peer-reviewed publications. IP follows the university's standard research policy, and everything we can publish openly, we do — open science is the fastest route to credibility for a first-of-its-kind lab.",
+  },
+  {
+    q: "Can we fund a specific line instead of the full seed?",
+    a: "Yes. The interactive budget calculator above lets you 'ignite' a partial amount — a $10K seed still trains 40 students on real hardware. Smaller seed, smaller lab, same physics. Reach out and we'll structure it.",
+  },
+] as const;
+
 export const NAV_LINKS = [
   { href: "#problem", label: "Problem" },
   { href: "#solution", label: "Solution" },
   { href: "#methodology", label: "Methodology" },
   { href: "#budget", label: "Budget" },
   { href: "#team", label: "Team" },
+  { href: "#faq", label: "FAQ" },
   { href: "#contact", label: "Contact" },
 ] as const;

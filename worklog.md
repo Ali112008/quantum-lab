@@ -59,3 +59,30 @@ Stage Summary:
 - Next-phase recommendations (priority order): 1) AR/EN bilingual toggle (grant guide is Arabic — funders likely Arabic-first; next-intl installed) with RTL layout support; 2) simple admin page or email digest for inquiries (protected); 3) downloadable one-page PDF proposal (print stylesheet or generated PDF); 4) OG share image + sitemap; 5) rate-limit + honeypot on POST /api/inquiries.
 
 ---
+Task ID: 3
+Agent: Z.ai Code (cron webDevReview round 2)
+Task: Assess project status, QA via agent-browser, fix bugs, then add new features (mandatory: more styling detail + more functionality).
+
+Work Log:
+- QA regression (agent-browser, desktop 1440x900 + mobile 390x844): page loads clean, zero console/page errors, dev.log clean; verified budget $10K preset (slider->10000, donut 20%, legend amounts, ROI 40/3/1/1/0), team Research filter (2 cards), mobile hamburger menu, footer terms.
+- Bug fix: grammar in BudgetCalculator outcome sentence — "publish 1 papers" -> pluralized "research project(s)" + "peer-reviewed paper(s)".
+- Security hardening (worklog round-1 rec #5):
+  - src/lib/rateLimit.ts: in-memory sliding-window limiter (5 POST / 10 min / IP, periodic sweep, x-forwarded-for keying).
+  - POST /api/inquiries now: rate limit (429 + Retry-After + friendly quantum message), `website` honeypot (bots get fake 202 success, nothing stored).
+  - ContactSection: hidden honeypot input (aria-hidden, tabIndex -1) + schema field.
+  - Verified by curl: normal 201, honeypot 202 + NOT stored (total unchanged), 429 from 5th rapid hit; test rows deleted afterwards (DB back to 1 legacy row).
+- SEO polish (rec #4): AI-generated OG cover image public/images/og-cover.png (1344x768, quantum network sphere over circuit board); layout.tsx got metadataBase (NEXT_PUBLIC_SITE_URL env fallback localhost), canonical, og/twitter images; src/app/sitemap.ts (single route); robots.txt + Sitemap line.
+- New SECTION 07 - FAQ (id=faq, "Measured Answers"): src/components/FAQ.tsx — sticky left pitch panel (guarantee card + mailto + PDF download row) + 8-question Radix accordion (custom +/- rotate trigger, Q00-Q07 mono indices, open-state glow border, stagger entrance); FAQ_ITEMS in data.ts; inserted between Team and Contact; Contact renumbered to SECTION 08; NAV_LINKS gained FAQ.
+- One-page PDF proposal (rec #3): download/proposal/quantum-lab-one-pager.html (A4 794x1123 dark quantum brand, self-hosted base64 Montserrat/Inter @font-face — Google Fonts CDN unreachable from headless browser; decorative SVG entanglement circuit + ghost psi; sections: header/hero+ask/problem strip/3-phase plan/budget allocation bar with itemized legend/Year-3 ROI KPIs/accountability strip/footer) -> skills/pdf html2poster.js -> public/proposal/quantum-lab-one-pager.pdf (vector, 276KB, exactly A4 after spacing trim; pdf_qa PASS; metadata Title/Author/Creator/Subject set).
+- PDF CTAs: navbar desktop icon button + mobile menu item, FAQ guarantee card row, footer tertiary button (all download="QRL-Lab-Seed-Proposal.pdf"; PROPOSAL_PDF const in data.ts).
+- Styling/a11y details: skip-to-content link (layout.tsx, first Tab stop — verified via keyboard), #main-content anchor on <main>; FAQ mobile wrap fix (flex-wrap gap-x-2).
+- bun run lint clean; agent-browser final sweep zero errors; PDF endpoint 200 application/pdf; sitemap.xml 200.
+
+Stage Summary:
+- Status: stable, feature-rich MVP++ (11 sections + fullstack inquiry pipeline + hardened API + SEO/OG/sitemap + downloadable print-ready A4 proposal).
+- Artifacts: og-cover.png, sitemap.ts, FAQ.tsx, rateLimit.ts, one-pager HTML/PDF/preview (download/proposal/), public/proposal/quantum-lab-one-pager.pdf.
+- Verification highlights: honeypot/rate-limit live-tested; accordion single-open verified; skip link keyboard-verified; budget/team/footer regressions pass.
+- Risks/notes: in-memory rate limiter resets on server restart (fine for single-node demo; swap Redis for multi-instance); OG image uses absolute metadataBase URL (set NEXT_PUBLIC_SITE_URL in prod); one-pager HTML is the editable source — re-render via html2poster.js after edits; PDF says "Cairo, Egypt" (assumed location — adjust if the university differs).
+- Next-phase recommendations (priority): 1) AR/EN bilingual toggle + RTL (next-intl installed; biggest remaining item, needs direction-aware animation pass); 2) protected admin inbox for inquiries (note: only / route is user-visible per platform constraint — consider email digest cron or basic-auth API instead); 3) sitemap/OG deploy wiring via NEXT_PUBLIC_SITE_URL; 4) team photo uploads for the 13 real members.
+
+---

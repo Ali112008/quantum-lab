@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
-import { Atom, Menu, X, ArrowUpRight } from "lucide-react";
-import { NAV_LINKS } from "@/lib/data";
+import { Atom, Menu, X, ArrowUpRight, FileDown } from "lucide-react";
+import { NAV_LINKS, PROPOSAL_PDF } from "@/lib/data";
 
 /**
  * Sticky navbar with a scroll-progress beam (the "measurement" bar),
@@ -77,7 +77,16 @@ export default function Navbar() {
               </a>
             </li>
           ))}
-          <li className="ml-2">
+          <li className="ml-2 flex items-center gap-2">
+            <a
+              href={PROPOSAL_PDF}
+              download="QRL-Lab-Seed-Proposal.pdf"
+              aria-label="Download the one-page proposal PDF"
+              title="Download the one-page proposal PDF"
+              className="inline-flex items-center justify-center size-9 rounded-lg border border-quantum-blue/30 text-quantum-blue hover:bg-quantum-blue/10 hover:border-quantum-blue/60 transition-all"
+            >
+              <FileDown className="size-4" aria-hidden="true" />
+            </a>
             <a
               href="#budget"
               className="inline-flex items-center gap-1.5 rounded-lg bg-quantum-blue px-4 py-2 text-sm font-semibold text-quantum-navy hover:bg-quantum-blue/85 hover:shadow-[0_0_24px_rgba(0,217,255,0.45)] transition-all"
@@ -132,6 +141,17 @@ export default function Navbar() {
                 >
                   Fund the Future
                   <ArrowUpRight className="size-4" aria-hidden="true" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={PROPOSAL_PDF}
+                  download="QRL-Lab-Seed-Proposal.pdf"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-quantum-blue/30 px-4 py-3 font-medium text-quantum-blue hover:bg-quantum-blue/10 transition-colors"
+                >
+                  <FileDown className="size-4" aria-hidden="true" />
+                  One-Page Proposal (PDF)
                 </a>
               </li>
             </ul>
