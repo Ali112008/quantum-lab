@@ -13,6 +13,7 @@ import {
   Wand2,
 } from "lucide-react";
 import QuantumCard from "@/components/ui/QuantumCard";
+import ChshGame from "@/components/ChshGame";
 import { useLang } from "@/lib/LanguageProvider";
 import { quantumVariants, staggerContainer, viewport } from "@/lib/animations";
 import { Button } from "@/components/ui/button";
@@ -754,6 +755,11 @@ export default function TwoQubitLab() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Full-width CHSH game — Bell's inequality, played live ── */}
+      <motion.div variants={quantumVariants} className="lg:col-span-2">
+        <ChshGame />
+      </motion.div>
 
       {/* ── Pedagogy footer — the Phase-2 pitch inside the toy ── */}
       <motion.div variants={quantumVariants} className="lg:col-span-2">

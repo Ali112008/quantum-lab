@@ -501,3 +501,128 @@ export const TWO_PRESETS: TwoPresetDef[] = [
 export const cloneTwoState = (s: TwoQubitState): TwoQubitState => ({
   amps: s.amps.map((z) => ({ ...z })) as TwoQubitState["amps"],
 });
+
+/* ================================================================== */
+/*                                                                    */
+/*                       C H S H   G A M E                            */
+/*                                                                    */
+/*  The loophole-free heart of the pitch: Bell's inequality, played   */
+/*  as a two-player game. Alice and Bob share one Bell pair but may   */
+/*  NOT communicate. Referee hands Alice a random bit x and Bob a     */
+/*  random bit y; each must output a bit (a and b). They win IFF      */
+/*     a ⊕ b = x·y                                                    */
+/*  Classical players (shared randomness allowed) win at most 75%.    */
+/*  Quantum players measuring the shared pair in rotated bases win    */
+/*  cos²(π/8) = (2+√2)/4 ≈ 85.36% — the largest allowed by nature     */
+/*  (Tsirelson's bound). Beating 75% is the experiment that killed    */
+/*  local realism (Freedman–Clauser 1972, Aspect 1982, Nobel 2022).   */
+/*                                                                    */
+/*  Measurement basis = the |0⟩/|1⟩ axes rotated by φ in the X–Z      */
+/*  plane. With rotations φA, φB the win rate for Φ⁺ depends only on  */
+/*  cos(2(φA−φB)) — the numbers below reproduce that analytically.    */
+/*                                                                    */
+/* ================================================================== */
+
+/** Classical CHSH ceiling: any local strategy wins ≤ 3/4 of rounds. */
+export const CHSH_CLASSICAL_WIN = 0.75;
+
+/** Quantum optimum: cos²(π/8) — the strategy the coach suggests. */
+export const CHSH_QUANTUM_WIN = (2 + Math.SQRT2) / 4;
+
+/** Classical bound on the CHSH statistic: |S| ≤ 2. */
+export const CHSH_CLASSICAL_S = 2;
+
+/** Tsirelson's bound: |S| ≤ 2√2 for any quantum strategy. */
+export const CHSH_QUANTUM_S = 2 * Math.SQRT2;
+
+/**
+ * Optimal basis rotation for Alice given her question x:
+ *   x = 0 → measure along Z (φ = 0),  x = 1 → halfway to X (φ = π/4).
+ */
+export const chshPhiA = (x: 0 | 1): number => (x * Math.PI) / 4;
+
+/**
+ * Optimal basis rotation for Bob given his question y:
+ *   y = 0 → +π/8,  y = 1 → −π/8.  The π/8 split is what turns
+ *   cos(2Δφ) into 1/√2 at every setting pair — the famous 22.5°.
+ */
+export const chshPhiB = (y: 0 | 1): number => Math.PI / 8 - y * (Math.PI / 4);
+
+/** One row ⟨a| of the X–Z rotation by φ: [cosφ, sinφ] or [−sinφ, cosφ]. */
+function rotRow(phi: number, a: 0 | 1): [number, number] {
+  return a === 0
+    ? [Math.cos(phi), Math.sin(phi)]
+    : [-Math.sin(phi), Math.cos(phi)];
+}
+
+/**
+ * Joint outcome probabilities P(a,b) when BOTH qubits of `state` are
+ * measured in X–Z bases rotated by φA (Alice, q0) and φB (Bob, q1):
+ *   P(a,b) = |Σᵢⱼ R_A[a][i]·R_B[b][j]·c_{i+2j}|²
+ * For Φ⁺ this reduces to P(same) = cos²(φA−φB) — but we keep the
+ * general Born-rule form so ANY state from the bench can be imported.
+ * Returned matrix is renormalized against floating-point drift.
+ */
+export function chshJointProbs(
+  s: TwoQubitState,
+  phiA: number,
+  phiB: number
+): [[number, number], [number, number]] {
+  const out: [[number, number], [number, number]] = [
+    [0, 0],
+    [0, 0],
+  ];
+  for (const a of [0, 1] as const) {
+    const [rA0, rA1] = rotRow(phiA, a);
+    for (const b of [0, 1] as const) {
+      const [rB0, rB1] = rotRow(phiB, b);
+      // M(a,b) = Σ_i R_A[a][i] · (Σ_j R_B[b][j] · c_{i+2j})
+      const re =
+        rA0 * (rB0 * s.amps[0].re + rB1 * s.amps[2].re) +
+        rA1 * (rB0 * s.amps[1].re + rB1 * s.amps[3].re);
+      const im =
+        rA0 * (rB0 * s.amps[0].im + rB1 * s.amps[2].im) +
+        rA1 * (rB0 * s.amps[1].im + rB1 * s.amps[3].im);
+      out[a][b] = Math.max(0, re * re + im * im);
+    }
+  }
+  const norm = out[0][0] + out[0][1] + out[1][0] + out[1][1] || 1;
+  return out.map((row) => row.map((p) => clean(p / norm))) as [
+    [number, number],
+    [number, number],
+  ];
+}
+
+/**
+ * One full round of the game on `state`: sample Alice's bit a and
+ * Bob's bit b from the joint distribution of their chosen bases.
+ * Non-destructive — the shared pair survives (a fresh one is assumed
+ * every round anyway, exactly like a real Bell-test photon source).
+ */
+export function sampleChsh(
+  s: TwoQubitState,
+  phiA: number,
+  phiB: number
+): { a: 0 | 1; b: 0 | 1 } {
+  const p = chshJointProbs(s, phiA, phiB);
+  const r = Math.random();
+  let acc = 0;
+  let a: 0 | 1 = 0;
+  let b: 0 | 1 = 0;
+  // Walk the 4 joint outcomes in a fixed order.
+  const cells: Array<[0 | 1, 0 | 1]> = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ];
+  for (const [ca, cb] of cells) {
+    acc += p[ca][cb];
+    if (r < acc) {
+      a = ca;
+      b = cb;
+      return { a, b };
+    }
+  }
+  return { a: 1, b: 1 };
+}

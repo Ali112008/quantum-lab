@@ -138,6 +138,60 @@ export interface Copy {
     pedagogy2Post: string;
     reducedAria: (n: number) => string;
   };
+  chsh: {
+    title: string;
+    subtitle: string;
+    dealBtn: string;
+    measureBtn: string;
+    nextBtn: string;
+    resetBtn: string;
+    resetAria: string;
+    coachLabel: string;
+    coachHintOn: string;
+    coachHintOff: string;
+    coachPick: string;
+    sharedTitle: string;
+    sharedNote: string;
+    aliceStation: string;
+    bobStation: string;
+    questionAlice: (x: 0 | 1) => string;
+    questionBob: (y: 0 | 1) => string;
+    targetSame: string;
+    targetDiff: string;
+    basisA0: string;
+    basisA1: string;
+    basisB0: string;
+    basisB1: string;
+    basisBlurbA0: string;
+    basisBlurbA1: string;
+    basisBlurbB0: string;
+    basisBlurbB1: string;
+    stationAria: (who: string) => string;
+    winBanner: string;
+    lossBanner: string;
+    winDetail: (a: 0 | 1, b: 0 | 1, target: 0 | 1) => string;
+    statsTitle: string;
+    roundsLabel: string;
+    winsLabel: string;
+    winRateLabel: string;
+    classicalMark: string;
+    quantumMark: string;
+    winRateAria: (pct: number) => string;
+    sTitle: string;
+    sAria: (s: number) => string;
+    sPending: string;
+    sClassicalMark: string;
+    sQuantumMark: string;
+    violationBadge: string;
+    violationNote: string;
+    historyLabel: string;
+    historyAria: string;
+    noRoundYet: string;
+    footerPre: string;
+    footerAccent: string;
+    footerPost: string;
+    roundN: (n: number) => string;
+  };
   budget: {
     askEyebrow: string;
     askChips: string[];
@@ -401,7 +455,7 @@ const en: Copy = {
     eyebrow: "SECTION 04 — TRY QUANTUM",
     title: "Play With A Real Qubit",
     subtitle:
-      "Not a video — a live simulator running in your browser, on the same math our students master in Phase 1. Start with one qubit, then entangle a pair. Apply gates, watch the Bloch sphere, measure. Go collapse something.",
+      "Not a video — a live simulator running in your browser, on the same math our students master in Phase 1. Start with one qubit, entangle a pair, then beat the classical limit in the CHSH game. Apply gates, watch the Bloch sphere, measure. Go collapse something.",
     blochAria: "Bloch disc showing the current qubit state",
     phaseLabel: "RELATIVE PHASE φ",
     stateLabel: "STATE VECTOR",
@@ -467,6 +521,74 @@ const en: Copy = {
     pedagogy2Post:
       " — Bell states power quantum teleportation, QKD security proofs, and the CHSH experiments our students will run on real hardware. You just built one in a browser tab.",
     reducedAria: (n) => `Bloch disc of qubit ${n}'s reduced state`,
+  },
+  chsh: {
+    title: "THE CHSH GAME",
+    subtitle:
+      "Alice and Bob share one entangled pair and may not communicate. Referee hands Alice bit x and Bob bit y — they win the round only if a ⊕ b = x·y. Classical strategy caps at 75%. Entanglement beats it. Prove it yourself.",
+    dealBtn: "Deal the challenge",
+    measureBtn: "Measure both",
+    nextBtn: "Next round",
+    resetBtn: "Reset stats",
+    resetAria: "Reset all CHSH statistics",
+    coachLabel: "COACH",
+    coachHintOn: "Coach on — the winning basis glows each round.",
+    coachHintOff: "Coach off — you're on your own, scientist.",
+    coachPick: "COACH PICK",
+    sharedTitle: "SHARED PAIR Φ⁺",
+    sharedNote: "one Bell pair per round — no communication",
+    aliceStation: "ALICE'S STATION",
+    bobStation: "BOB'S STATION",
+    questionAlice: (x) =>
+      x === 0
+        ? "Referee asks Alice: x = 0 — measure any axis you like."
+        : "Referee asks Alice: x = 1 — measure any axis you like.",
+    questionBob: (y) =>
+      y === 0
+        ? "Referee asks Bob: y = 0 — measure any axis you like."
+        : "Referee asks Bob: y = 1 — measure any axis you like.",
+    targetSame: "x·y = 0 → the bits must MATCH",
+    targetDiff: "x·y = 1 → the bits must DIFFER",
+    basisA0: "0° · Z",
+    basisA1: "45° · X",
+    basisB0: "+22.5°",
+    basisB1: "−22.5°",
+    basisBlurbA0:
+      "Measure along the Z axis — the plain |0⟩/|1⟩ question. Optimal when x = 0.",
+    basisBlurbA1:
+      "Rotate 45° toward X — halfway between the poles. Optimal when x = 1.",
+    basisBlurbB0:
+      "Rotate +22.5° toward X — the famous half-angle. Optimal when y = 0.",
+    basisBlurbB1:
+      "Rotate −22.5° the other way — the twin setting. Optimal when y = 1.",
+    stationAria: (who) => `${who}: choose a measurement basis`,
+    winBanner: "ROUND WON",
+    lossBanner: "ROUND LOST",
+    winDetail: (a, b, target) =>
+      `a ⊕ b = ${a ^ b} · x·y = ${target} — the correlation held${target === 0 ? "" : " (anti-correlated)"}.`,
+    statsTitle: "SCOREBOARD",
+    roundsLabel: "ROUNDS",
+    winsLabel: "WINS",
+    winRateLabel: "WIN RATE",
+    classicalMark: "CLASSICAL 75%",
+    quantumMark: "QUANTUM 85.4%",
+    winRateAria: (pct) => `Win rate ${pct} percent`,
+    sTitle: "CHSH S VALUE",
+    sAria: (s) => `CHSH statistic S = ${s}`,
+    sPending: "Play all 4 setting pairs to estimate S",
+    sClassicalMark: "CLASSICAL |S| ≤ 2",
+    sQuantumMark: "TSIRELSON 2√2",
+    violationBadge: "BELL VIOLATION ACHIEVED",
+    violationNote:
+      "S crossed the classical bound with real sampling statistics. Local realism just failed in your browser — the same result that earned the 2022 Nobel Prize.",
+    historyLabel: "LAST ROUNDS",
+    historyAria: "History of recent rounds",
+    noRoundYet: "No rounds yet — deal the first challenge.",
+    footerPre: "This is the ",
+    footerAccent: "Phase-2 lab experiment",
+    footerPost:
+      " — the exact CHSH protocol our students will run on entangled photons and superconducting hardware. In a browser tab you just reproduced the experiment that separates quantum mechanics from every classical theory.",
+    roundN: (n) => `Round ${n}`,
   },
   budget: {
     askEyebrow: "The Ask",
@@ -769,7 +891,7 @@ const ar: Copy = {
     eyebrow: "القسم 04 — جرّب الكم",
     title: "جرّب كيوبيتًا حقيقيًا",
     subtitle:
-      "ليست مقطعًا مرئيًا — إنها محاكاة حية تعمل في متصفحك، بالرياضيات نفسها التي يتقنها طلابنا في المرحلة الأولى. ابدأ بكيوبيت واحد، ثم متشابك زوجًا. طبّق البوابات، راقب كرة بلوخ، ثم قِس. أسقِط شيئًا ما.",
+      "ليست مقطعًا مرئيًا — إنها محاكاة حية تعمل في متصفحك، بالرياضيات نفسها التي يتقنها طلابنا في المرحلة الأولى. ابدأ بكيوبيت واحد، ثم شابك زوجًا، ثم اخترق الحد الكلاسيكي في لعبة CHSH. طبّق البوابات، راقب كرة بلوخ، ثم قِس. أسقِط شيئًا ما.",
     blochAria: "قرص بلوخ يعرض حالة الكيوبيت الحالية",
     phaseLabel: "الطور النسبي φ",
     stateLabel: "متجه الحالة",
@@ -835,6 +957,74 @@ const ar: Copy = {
     pedagogy2Post:
       " — حالات بِل تشغّل النقل الكمومي وإثباتات أمان QKD وتجارب CHSH التي سيجريها طلابنا على عتاد حقيقي. لقد بنتَ واحدةً للتو في تبويب متصفح.",
     reducedAria: (n) => `قرص بلوخ للحالة المختزلة للكيوبيت ${n}`,
+  },
+  chsh: {
+    title: "لعبة CHSH",
+    subtitle:
+      "أليس وبوب يتشاركان زوجًا متشابكًا واحدًا ولا يجوز أن يتبادلا أي رسالة. يمنح الحَكَم أليس البت x وبوب البت y — ولا يُحسم الجولة لصالحهما إلا إذا تحقق a ⊕ b = x·y. الاستراتيجية الكلاسيكية سقفها 75%. التشابك يتجاوز هذا السقف. أثبت ذلك بنفسك.",
+    dealBtn: "اسحب التحدي",
+    measureBtn: "قِس الطرفين",
+    nextBtn: "الجولة التالية",
+    resetBtn: "تصفير الإحصاءات",
+    resetAria: "تصفير جميع إحصاءات CHSH",
+    coachLabel: "المدرب",
+    coachHintOn: "المدرب مفعّل — الأساس الرابح يتوهج في كل جولة.",
+    coachHintOff: "المدرب معطّل — أنت وحدك الآن أيها الباحث.",
+    coachPick: "اختيار المدرب",
+    sharedTitle: "زوج مشترك Φ⁺",
+    sharedNote: "زوج بِل واحد لكل جولة — بلا اتصال بين الطرفين",
+    aliceStation: "محطة أليس",
+    bobStation: "محطة بوب",
+    questionAlice: (x) =>
+      x === 0
+        ? "يسأل الحَكَم أليس: x = 0 — قيسي على المحور الذي تريدينه."
+        : "يسأل الحَكَم أليس: x = 1 — قيسي على المحور الذي تريدينه.",
+    questionBob: (y) =>
+      y === 0
+        ? "يسأل الحَكَم بوب: y = 0 — قِس على المحور الذي تريده."
+        : "يسأل الحَكَم بوب: y = 1 — قِس على المحور الذي تريده.",
+    targetSame: "x·y = 0 ← يجب أن تتطابق البتان",
+    targetDiff: "x·y = 1 ← يجب أن تختلفا البتان",
+    basisA0: "0° · Z",
+    basisA1: "45° · X",
+    basisB0: "‎+22.5°",
+    basisB1: "‎−22.5°",
+    basisBlurbA0:
+      "القياس على محور Z — السؤال المعتاد |0⟩/|1⟩. الأمثل عندما x = 0.",
+    basisBlurbA1:
+      "دوران 45° باتجاه X — في منتصف الطريق بين القطبين. الأمثل عندما x = 1.",
+    basisBlurbB0:
+      "دوران ‎+22.5° باتجاه X — نصف الزاوية الشهير. الأمثل عندما y = 0.",
+    basisBlurbB1:
+      "دوران ‎−22.5° في الاتجاه المعاكس — الإعداد التوأم. الأمثل عندما y = 1.",
+    stationAria: (who) => `${who}: اختر أساس القياس`,
+    winBanner: "جولة رابحة",
+    lossBanner: "جولة خاسرة",
+    winDetail: (a, b, target) =>
+      `a ⊕ b = ${a ^ b} · x·y = ${target} — الارتباط صامد${target === 0 ? "ت" : " (تعاكس تام)"}.`,
+    statsTitle: "لوحة النتائج",
+    roundsLabel: "الجولات",
+    winsLabel: "الانتصارات",
+    winRateLabel: "نسبة الفوز",
+    classicalMark: "كلاسيكي 75%",
+    quantumMark: "كمومي 85.4%",
+    winRateAria: (pct) => `نسبة الفوز ${pct} بالمئة`,
+    sTitle: "قيمة CHSH",
+    sAria: (s) => `إحصائية CHSH تساوي ${s}`,
+    sPending: "العب الأزواج الأربعة كلها لتقدير S",
+    sClassicalMark: "كلاسيكي |S| ≤ 2",
+    sQuantumMark: "تسيرلسون 2√2",
+    violationBadge: "كسرُ متباينة بِل تحقق!",
+    violationNote:
+      "تجاوز S الحد الكلاسيكي بإحصاءات قياس حقيقية. انهار الواقع المحلي للتو في متصفحك — النتيجة ذاتها التي نالت جائزة نوبل لعام 2022.",
+    historyLabel: "آخر الجولات",
+    historyAria: "سجل الجولات الأخيرة",
+    noRoundYet: "لا جولات بعد — اسحب التحدي الأول.",
+    footerPre: "هذه ",
+    footerAccent: "تجربة المرحلة الثانية في مختبرنا",
+    footerPost:
+      " — بروتوكول CHSH نفسه الذي سيجريه طلابنا على الفوتونات المتشابكة والعتاد فائق التوصيل. في تبويب متصفح كنت تعيد للتو التجربة التي تفصل ميكانيكا الكم عن كل نظرية كلاسيكية.",
+    roundN: (n) => `الجولة ${n}`,
   },
   budget: {
     askEyebrow: "المطلوب",

@@ -319,8 +319,14 @@ export default function Hero() {
           >
             <div className="glass-panel rounded-3xl p-6 md:p-8 animate-float-slow">
               <QuantumCircuit ariaLabel={t.hero.circuitAria} />
+              {/* Caption tokens never break mid-word — wrap only at the · separators */}
               <p className="mt-4 text-center font-mono text-[11px] tracking-[0.25em] text-quantum-subtle uppercase">
-                {t.hero.circuitCaption}
+                {t.hero.circuitCaption.split("·").map((token, i, arr) => (
+                  <span key={i}>
+                    <span className="whitespace-nowrap">{token.trim()}</span>
+                    {i < arr.length - 1 && <span aria-hidden="true"> · </span>}
+                  </span>
+                ))}
               </p>
             </div>
             {/* orbiting electron accents */}

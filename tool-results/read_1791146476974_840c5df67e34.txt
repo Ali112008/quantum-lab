@@ -1,0 +1,778 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useMemo, useState } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  CircuitBoard,
+     7→  Dices,
+     8→  Gauge,
+     9→  Link2,
+    10→  Orbit,
+    11→  RotateCcw,
+    12→  Undo2,
+    13→  Wand2,
+    14→} from "lucide-react";
+    15→import QuantumCard from "@/components/ui/QuantumCard";
+    16→import { useLang } from "@/lib/LanguageProvider";
+    17→import { quantumVariants, staggerContainer, viewport } from "@/lib/animations";
+    18→import { Button } from "@/components/ui/button";
+    19→import {
+    20→  GATES,
+    21→  TWO_PRESETS,
+    22→  TWO_ZERO_STATE,
+    23→  applyCNOT,
+    24→  applySingleToWire,
+    25→  cloneTwoState,
+    26→  collapseTwo,
+    27→  concurrence,
+    28→  ketLabel,
+    29→  reducedBloch,
+    30→  sampleTwoOnce,
+    31→  twoProbabilities,
+    32→  type TwoQubitOp,
+    33→  type TwoQubitState,
+    34→} from "@/lib/quantum";
+    35→
+    36→/**
+    37→ * The two-qubit wing of SECTION 04 — TRY QUANTUM.
+    38→ *
+    39→ * One qubit showed superposition; two qubits show the thing that actually
+    40→ * gives quantum computers their power: ENTANGLEMENT. The centerpiece is
+    41→ * CNOT + H = Bell pair, and the signature visual is the two Bloch discs
+    42→ * shrinking to their centers as the entanglement meter fills — each qubit
+    43→ * alone becomes pure noise while the correlation becomes perfect.
+    44→ *
+    45→ * Physics honesty notes:
+    46→ *  - Each disc shows the reduced (mixed) state, so the vector LENGTH now
+    47→ *    varies: length 1 = pure/separable, length 0 = maximally mixed.
+    48→ *  - The meter is the concurrence C = 2|c₀c₃ − c₁c₂| — exact for pure states.
+    49→ *  - Everything runs at build-free display precision, renormalized per gate.
+    50→ *
+    51→ * RTL note: kets, circuit lanes and C values stay dir="ltr"; chrome flips.
+    52→ */
+    53→
+    54→const HISTORY_LIMIT = 32;
+    55→const CIRCUIT_WINDOW = 6;
+    56→const ENTANGLED_COLOR = "#FF6B9D"; // pink — reserved for entanglement
+    57→const JOINT_COLORS = ["#00D9FF", "#6C5CE7", "#00B894", "#FFD166"] as const;
+    58→
+    59→interface Snapshot {
+    60→  state: TwoQubitState;
+    61→  circuit: TwoQubitOp[];
+    62→}
+    63→
+    64→/** One row of the two-qubit gate rack. */
+    65→interface RackButton {
+    66→  id: string;
+    67→  label: string;
+    68→  accent: string;
+    69→  blurb: string;
+    70→  apply: (s: TwoQubitState) => TwoQubitState;
+    71→  op: TwoQubitOp;
+    72→}
+    73→
+    74→/* ------------------------------------------------------------------ */
+    75→/*                     Reduced-state Bloch disc                        */
+    76→/* ------------------------------------------------------------------ */
+    77→
+    78→/**
+    79→ * Mini Bloch disc of ONE qubit's reduced state. Unlike the single-qubit
+    80→ * disc, the vector length varies — watching it shrink toward the center
+    81→ * as CNOT entangles the pair is the whole lesson in one picture.
+    82→ */
+    83→function ReducedBloch({
+    84→  x,
+    85→  z,
+    86→  qubit,
+    87→  ariaLabel,
+    88→}: {
+    89→  x: number;
+    90→  z: number;
+    91→  qubit: 0 | 1;
+    92→  ariaLabel: string;
+    93→}) {
+    94→  const SIZE = 150;
+    95→  const R = SIZE / 2 - 20;
+    96→  const C = SIZE / 2;
+    97→  const len = Math.min(1, Math.hypot(x, z)); // |ρ| ∈ [0,1]
+    98→  const thetaDeg = (Math.atan2(x, z) * 180) / Math.PI;
+    99→  const mixed = len < 0.05; // maximally mixed → pure noise, no direction
+   100→  const accent = qubit === 0 ? "#00D9FF" : "#6C5CE7";
+   101→
+   102→  return (
+   103→    <svg
+   104→      width={SIZE}
+   105→      height={SIZE}
+   106→      viewBox={`0 0 ${SIZE} ${SIZE}`}
+   107→      role="img"
+   108→      aria-label={ariaLabel}
+   109→      dir="ltr"
+   110→      className="drop-shadow-[0_0_18px_rgba(0,217,255,0.12)]"
+   111→    >
+   112→      {/* sphere silhouette */}
+   113→      <circle cx={C} cy={C} r={R} fill="rgba(17,34,64,0.6)" stroke="rgba(136,146,176,0.3)" strokeWidth="1.2" />
+   114→      {/* equator hint */}
+   115→      <ellipse cx={C} cy={C} rx={R} ry={R * 0.32} fill="none" stroke="rgba(136,146,176,0.25)" strokeWidth="1" strokeDasharray="3 4" />
+   116→      {/* poles */}
+   117→      <text x={C} y={C - R - 8} textAnchor="middle" fill="#8892B0" fontSize="11" fontFamily="var(--font-mono), monospace">
+   118→        |0⟩
+   119→      </text>
+   120→      <text x={C} y={C + R + 16} textAnchor="middle" fill="#8892B0" fontSize="11" fontFamily="var(--font-mono), monospace">
+   121→        |1⟩
+   122→      </text>
+   123→
+   124→      {mixed ? (
+   125→        /* maximally mixed: no direction at all — render a breathing blob */
+   126→        <motion.circle
+   127→          cx={C}
+   128→          cy={C}
+   129→          r={6}
+   130→          fill={accent}
+   131→          animate={{ opacity: [0.35, 0.9, 0.35], scale: [0.8, 1.25, 0.8] }}
+   132→          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+   133→          style={{ transformOrigin: `${C}px ${C}px` }}
+   134→        />
+   135→      ) : (
+   136→        <g transform={`translate(${C} ${C})`}>
+   137→          <motion.g
+   138→            animate={{ rotate: thetaDeg, scale: len }}
+   139→            transition={{ type: "spring", stiffness: 110, damping: 16 }}
+   140→            style={{ transformOrigin: "0px 0px" }}
+   141→          >
+   142→            <line x1="0" y1="0" x2="0" y2={-R} stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+   143→            <circle cx="0" cy={-R} r="6" fill={accent} className="animate-pulse-glow" />
+   144→          </motion.g>
+   145→          <circle cx="0" cy="0" r="2.5" fill="#8892B0" />
+   146→        </g>
+   147→      )}
+   148→    </svg>
+   149→  );
+   150→}
+   151→
+   152→/* ------------------------------------------------------------------ */
+   153→/*                       Circuit op column                             */
+   154→/* ------------------------------------------------------------------ */
+   155→
+   156→const LANE_TOP = 18; // px — center of q0 lane inside a 72px column
+   157→const LANE_BOTTOM = 54; // px — center of q1 lane
+   158→
+   159→/** One column of the two-lane circuit: a gate chip or a CNOT pair. */
+   160→function OpColumn({ op }: { op: TwoQubitOp }) {
+   161→  if (op.kind === "gate") {
+   162→    const gate = GATES.find((g) => g.symbol === op.symbol);
+   163→    const accent = gate?.accent ?? "#00D9FF";
+   164→    return (
+   165→      <motion.span
+   166→        initial={{ scale: 0, opacity: 0 }}
+   167→        animate={{ scale: 1, opacity: 1 }}
+   168→        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+   169→        className="relative block h-[72px] w-10 shrink-0"
+   170→      >
+   171→        <span
+   172→          className="absolute flex h-9 w-9 items-center justify-center rounded-md border bg-quantum-secondary font-mono text-sm font-bold shadow-[0_0_10px_rgba(0,0,0,0.4)]"
+   173→          style={{
+   174→            color: accent,
+   175→            borderColor: `${accent}55`,
+   176→            top: op.target === 0 ? LANE_TOP - 18 : LANE_BOTTOM - 18,
+   177→            left: "50%",
+   178→            transform: "translateX(-50%)",
+   179→          }}
+   180→        >
+   181→          {op.symbol}
+   182→        </span>
+   183→      </motion.span>
+   184→    );
+   185→  }
+   186→
+   187→  // CNOT: control dot on one lane, ⊕ target on the other, vertical connector.
+   188→  const ctrlY = op.control === 0 ? LANE_TOP : LANE_BOTTOM;
+   189→  const tgtY = op.control === 0 ? LANE_BOTTOM : LANE_TOP;
+   190→  return (
+   191→    <motion.span
+   192→      initial={{ scale: 0, opacity: 0 }}
+   193→      animate={{ scale: 1, opacity: 1 }}
+   194→      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+   195→      className="relative block h-[72px] w-10 shrink-0"
+   196→    >
+   197→      {/* vertical connector */}
+   198→      <span
+   199→        className="absolute left-1/2 w-0.5 -translate-x-1/2 bg-quantum-green shadow-[0_0_8px_rgba(0,184,148,0.6)]"
+   200→        style={{ top: Math.min(ctrlY, tgtY), height: Math.abs(ctrlY - tgtY) }}
+   201→        aria-hidden="true"
+   202→      />
+   203→      {/* control dot */}
+   204→      <span
+   205→        className="absolute left-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-quantum-green shadow-[0_0_10px_rgba(0,184,148,0.8)]"
+   206→        style={{ top: ctrlY }}
+   207→        aria-hidden="true"
+   208→      />
+   209→      {/* target ⊕ */}
+   210→      <span
+   211→        className="absolute left-1/2 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-quantum-green bg-quantum-navy font-mono text-[11px] font-bold leading-none text-quantum-green"
+   212→        style={{ top: tgtY }}
+   213→        aria-hidden="true"
+   214→      >
+   215→        +
+   216→      </span>
+   217→    </motion.span>
+   218→  );
+   219→}
+   220→
+   221→/* ------------------------------------------------------------------ */
+   222→/*                            The lab                                  */
+   223→/* ------------------------------------------------------------------ */
+   224→
+   225→export default function TwoQubitLab() {
+   226→  const { t, tx, isAr } = useLang();
+   227→  const pg = t.playground;
+   228→  const tq = t.twoQubit;
+   229→
+   230→  const [state, setState] = useState<TwoQubitState>(TWO_ZERO_STATE);
+   231→  const [circuit, setCircuit] = useState<TwoQubitOp[]>([]);
+   232→  const [history, setHistory] = useState<Snapshot[]>([]);
+   233→  const [flash, setFlash] = useState<number | null>(null);
+   234→  const [shots, setShots] = useState<[number, number, number, number] | null>(null);
+   235→  const [liveMsg, setLiveMsg] = useState<string>("");
+   236→  const [hoverOp, setHoverOp] = useState<RackButton | null>(null);
+   237→  const [celebrated, setCelebrated] = useState(false);
+   238→
+   239→  const probs = useMemo(() => twoProbabilities(state), [state]);
+   240→  const C = useMemo(() => concurrence(state), [state]);
+   241→  const blochQ0 = useMemo(() => reducedBloch(state, 0), [state]);
+   242→  const blochQ1 = useMemo(() => reducedBloch(state, 1), [state]);
+   243→  const isBell = C > 0.99;
+   244→
+   245→  const H_MATRIX = GATES[0].matrix;
+   246→  const X_MATRIX = GATES[1].matrix;
+   247→
+   248→  /** The six-operation rack: 4 single-wire gates + 2 CNOT directions. */
+   249→  const RACK: RackButton[] = [
+   250→    { id: "h0", label: "H·q0", accent: "#00D9FF", blurb: tq.blurbH(0), apply: (s) => applySingleToWire(s, H_MATRIX, 0), op: { kind: "gate", symbol: "H", target: 0 } },
+   251→    { id: "x0", label: "X·q0", accent: "#6C5CE7", blurb: tq.blurbX(0), apply: (s) => applySingleToWire(s, X_MATRIX, 0), op: { kind: "gate", symbol: "X", target: 0 } },
+   252→    { id: "h1", label: "H·q1", accent: "#00D9FF", blurb: tq.blurbH(1), apply: (s) => applySingleToWire(s, H_MATRIX, 1), op: { kind: "gate", symbol: "H", target: 1 } },
+   253→    { id: "x1", label: "X·q1", accent: "#6C5CE7", blurb: tq.blurbX(1), apply: (s) => applySingleToWire(s, X_MATRIX, 1), op: { kind: "gate", symbol: "X", target: 1 } },
+   254→    { id: "c01", label: "⊕ 0→1", accent: "#00B894", blurb: tq.blurbCnot(0, 1), apply: (s) => applyCNOT(s, 0), op: { kind: "cnot", control: 0 } },
+   255→    { id: "c10", label: "⊕ 1→0", accent: "#00B894", blurb: tq.blurbCnot(1, 0), apply: (s) => applyCNOT(s, 1), op: { kind: "cnot", control: 1 } },
+   256→  ];
+   257→
+   258→  const snapshot = useCallback(() => {
+   259→    setHistory((prev) => [
+   260→      ...prev.slice(-HISTORY_LIMIT + 1),
+   261→      { state: cloneTwoState(state), circuit: [...circuit] },
+   262→    ]);
+   263→  }, [state, circuit]);
+   264→
+   265→  const clearTransient = () => {
+   266→    setShots(null);
+   267→    setFlash(null);
+   268→  };
+   269→
+   270→  const applyOne = useCallback(
+   271→    (btn: RackButton) => {
+   272→      snapshot();
+   273→      const next = btn.apply(state);
+   274→      setState(next);
+   275→      setCircuit((prev) => [...prev, btn.op]);
+   276→      clearTransient();
+   277→      // One-shot celebration the first time a Bell pair appears.
+   278→      if (!celebrated && concurrence(next) > 0.99) setCelebrated(true);
+   279→    },
+   280→    [snapshot, state, celebrated]
+   281→  );
+   282→
+   283→  const loadPreset = useCallback(
+   284→    (presetState: TwoQubitState) => {
+   285→      snapshot();
+   286→      setState(cloneTwoState(presetState));
+   287→      setCircuit([]);
+   288→      clearTransient();
+   289→    },
+   290→    [snapshot]
+   291→  );
+   292→
+   293→  const undo = useCallback(() => {
+   294→    setHistory((prev) => {
+   295→      if (prev.length === 0) return prev;
+   296→      const last = prev[prev.length - 1];
+   297→      setState(last.state);
+   298→      setCircuit(last.circuit);
+   299→      clearTransient();
+   300→      return prev.slice(0, -1);
+   301→    });
+   302→  }, []);
+   303→
+   304→  const reset = useCallback(() => {
+   305→    snapshot();
+   306→    setState(TWO_ZERO_STATE);
+   307→    setCircuit([]);
+   308→    clearTransient();
+   309→  }, [snapshot]);
+   310→
+   311→  /** Destructive projective measurement of BOTH qubits. */
+   312→  const measureOnce = useCallback(() => {
+   313→    snapshot();
+   314→    const outcome = sampleTwoOnce(state);
+   315→    setState(collapseTwo(outcome));
+   316→    clearTransient();
+   317→    const label = ketLabel(outcome);
+   318→    setLiveMsg(tq.collapsedTo2(label));
+   319→  }, [state, snapshot, tq]);
+   320→
+   321→  /** Born-rule sampling ×100 — non-destructive. */
+   322→  const runShots = useCallback(() => {
+   323→    const counts: [number, number, number, number] = [0, 0, 0, 0];
+   324→    for (let i = 0; i < 100; i++) counts[sampleTwoOnce(state)]++;
+   325→    setShots(counts);
+   326→    const summary = counts
+   327→      .map((n, i) => `${n}× ${ketLabel(i)}`)
+   328→      .filter((s) => !s.startsWith("0×"))
+   329→      .join(" · ");
+   330→    setLiveMsg(tq.shotsSummary2(summary));
+   331→  }, [state, tq]);
+   332→
+   333→  const visibleOps = circuit.slice(-CIRCUIT_WINDOW);
+   334→  const hiddenCount = circuit.length - visibleOps.length;
+   335→
+   336→  const jointAria = probs
+   337→    .map((p, i) => `${ketLabel(i)} ${(p * 100).toFixed(0)}%`)
+   338→    .join(", ");
+   339→
+   340→  return (
+   341→    <motion.div
+   342→      variants={staggerContainer}
+   343→      initial="hidden"
+   344→      whileInView="visible"
+   345→      viewport={viewport}
+   346→      className="grid gap-6 lg:grid-cols-2"
+   347→    >
+   348→      {/* ── Left: reduced Bloch discs + entanglement meter + joint probs ── */}
+   349→      <QuantumCard accent={ENTANGLED_COLOR} noReveal className="p-6 md:p-8">
+   350→        <div className="mb-1 flex items-baseline justify-between gap-3">
+   351→          <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-white">
+   352→            <Orbit className="h-4 w-4 text-quantum-purple" />
+   353→            {tq.spheresTitle}
+   354→          </h3>
+   355→        </div>
+   356→        <p className="mb-5 text-[11px] text-quantum-subtle">{tq.wireHint}</p>
+   357→
+   358→        {/* the pair, linked by their correlation */}
+   359→        <div className="relative flex items-center justify-center gap-1 sm:gap-3">
+   360→          <div className="flex flex-col items-center">
+   361→            <ReducedBloch
+   362→              x={blochQ0.x}
+   363→              z={blochQ0.z}
+   364→              qubit={0}
+   365→              ariaLabel={tq.reducedAria(0)}
+   366→            />
+   367→            <p className="mt-1 font-mono text-[10px] tracking-wider text-quantum-subtle" dir="ltr">
+   368→              {tq.qubitLabel(0)}
+   369→            </p>
+   370→          </div>
+   371→
+   372→          {/* correlation beam — intensity IS the concurrence */}
+   373→          <div className="flex w-10 flex-col items-center gap-1.5 sm:w-14" aria-hidden="true">
+   374→            <span
+   375→              className="font-mono text-lg transition-colors"
+   376→              style={{ color: ENTANGLED_COLOR, opacity: 0.35 + C * 0.65 }}
+   377→            >
+   378→              ⊗
+   379→            </span>
+   380→            <div
+   381→              className={`h-16 w-1 rounded-full ${isBell ? "animate-pulse-glow" : ""}`}
+   382→              style={{
+   383→                background: `linear-gradient(180deg, transparent, ${ENTANGLED_COLOR}, transparent)`,
+   384→                opacity: 0.12 + C * 0.88,
+   385→                boxShadow: C > 0.9 ? `0 0 18px ${ENTANGLED_COLOR}` : "none",
+   386→              }}
+   387→            />
+   388→            <span className="font-mono text-[10px] text-quantum-subtle" dir="ltr">
+   389→              C={C.toFixed(2)}
+   390→            </span>
+   391→          </div>
+   392→
+   393→          <div className="flex flex-col items-center">
+   394→            <ReducedBloch
+   395→              x={blochQ1.x}
+   396→              z={blochQ1.z}
+   397→              qubit={1}
+   398→              ariaLabel={tq.reducedAria(1)}
+   399→            />
+   400→            <p className="mt-1 font-mono text-[10px] tracking-wider text-quantum-subtle" dir="ltr">
+   401→              {tq.qubitLabel(1)}
+   402→            </p>
+   403→          </div>
+   404→
+   405→          {/* collapse flash — shared by the pair */}
+   406→          <AnimatePresence>
+   407→            {flash !== null && (
+   408→              <motion.div
+   409→                key={flash}
+   410→                initial={{ opacity: 0, scale: 0.4 }}
+   411→                animate={{ opacity: 1, scale: 1 }}
+   412→                exit={{ opacity: 0, scale: 1.6 }}
+   413→                transition={{ duration: 0.45 }}
+   414→                className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+   415→                dir="ltr"
+   416→              >
+   417→                <span className="rounded-xl bg-quantum-navy/70 px-4 py-2 font-mono text-4xl font-bold text-quantum-blue text-glow">
+   418→                  {ketLabel(flash)}
+   419→                </span>
+   420→              </motion.div>
+   421→            )}
+   422→          </AnimatePresence>
+   423→        </div>
+   424→
+   425→        {/* entanglement meter */}
+   426→        <div className="mt-6" role="img" aria-label={tq.meterAria(C)}>
+   427→          <div className="mb-1.5 flex items-center justify-between">
+   428→            <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.25em] text-quantum-subtle">
+   429→              <Link2 className="h-3.5 w-3.5" style={{ color: ENTANGLED_COLOR }} />
+   430→              {tq.meterLabel}
+   431→            </span>
+   432→            <span className="font-mono text-sm text-white" dir="ltr">
+   433→              {(C * 100).toFixed(1)}%
+   434→            </span>
+   435→          </div>
+   436→          <div className="h-2.5 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   437→            <motion.div
+   438→              className="h-full rounded-full"
+   439→              style={{
+   440→                background: `linear-gradient(90deg, #00D9FF, #6C5CE7, ${ENTANGLED_COLOR})`,
+   441→                boxShadow: `0 0 14px ${ENTANGLED_COLOR}66`,
+   442→              }}
+   443→              animate={{ width: `${C * 100}%` }}
+   444→              transition={{ type: "spring", stiffness: 110, damping: 18 }}
+   445→            />
+   446→          </div>
+   447→          <div className="mt-1 flex justify-between text-[10px] text-quantum-subtle/80">
+   448→            <span>{tq.meterLeft}</span>
+   449→            <span>{tq.meterRight}</span>
+   450→          </div>
+   451→        </div>
+   452→
+   453→        {/* Bell achievement — the payoff moment */}
+   454→        <AnimatePresence>
+   455→          {isBell && (
+   456→            <motion.div
+   457→              initial={{ opacity: 0, y: 10, scale: 0.96 }}
+   458→              animate={{ opacity: 1, y: 0, scale: 1 }}
+   459→              exit={{ opacity: 0, y: -6 }}
+   460→              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+   461→              className="mt-5 rounded-xl border border-[#FF6B9D]/40 bg-[#FF6B9D]/[0.07] p-4"
+   462→            >
+   463→              <p className="flex items-center gap-2 font-heading text-sm font-bold text-[#FF6B9D]">
+   464→                <Link2 className="h-4 w-4 animate-pulse" />
+   465→                {tq.bellBadge}
+   466→              </p>
+   467→              <p className="mt-1.5 text-xs leading-relaxed text-quantum-subtle" dir={isAr ? "rtl" : "ltr"}>
+   468→                {tq.bellNote}
+   469→              </p>
+   470→            </motion.div>
+   471→          )}
+   472→        </AnimatePresence>
+   473→
+   474→        {/* joint probabilities over the 4-outcome basis */}
+   475→        <div className="mt-6" role="img" aria-label={jointAria}>
+   476→          <p className="mb-1 font-mono text-[10px] tracking-[0.25em] text-quantum-subtle">
+   477→            {tq.jointTitle}
+   478→          </p>
+   479→          <p className="mb-3 text-[11px] italic text-quantum-subtle/70" dir={isAr ? "rtl" : "ltr"}>
+   480→            {tq.endianNote}
+   481→          </p>
+   482→          <div className="space-y-2.5">
+   483→            {probs.map((p, i) => (
+   484→              <div key={i} className="flex items-center gap-3">
+   485→                <span dir="ltr" className="w-12 shrink-0 font-mono text-xs text-quantum-subtle">
+   486→                  {ketLabel(i)}
+   487→                </span>
+   488→                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   489→                  <motion.div
+   490→                    className="h-full rounded-full"
+   491→                    style={{
+   492→                      background: `linear-gradient(90deg, ${JOINT_COLORS[i]}, ${JOINT_COLORS[i]}99)`,
+   493→                      boxShadow: `0 0 12px ${JOINT_COLORS[i]}55`,
+   494→                    }}
+   495→                    animate={{ width: `${p * 100}%` }}
+   496→                    transition={{ type: "spring", stiffness: 110, damping: 18 }}
+   497→                  />
+   498→                </div>
+   499→                <span dir="ltr" className="w-12 shrink-0 text-end font-mono text-[11px] text-white">
+   500→                  {(p * 100).toFixed(1)}%
+   501→                </span>
+   502→              </div>
+   503→            ))}
+   504→          </div>
+   505→        </div>
+   506→      </QuantumCard>
+   507→
+   508→      {/* ── Right: 2Q gate rack, entangling circuit, presets, actions ── */}
+   509→      <QuantumCard accent="#00B894" noReveal className="flex flex-col gap-6 p-6 md:p-8">
+   510→        {/* rack */}
+   511→        <div aria-label={pg.controlsAria}>
+   512→          <div className="mb-3 flex items-baseline justify-between gap-3">
+   513→            <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-white">
+   514→              <Gauge className="h-4 w-4 text-quantum-green" />
+   515→              {tq.gates2Title}
+   516→            </h3>
+   517→            <p className="text-[11px] text-quantum-subtle">{tq.gates2Hint}</p>
+   518→          </div>
+   519→          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+   520→            {RACK.map((btn) => (
+   521→              <button
+   522→                key={btn.id}
+   523→                type="button"
+   524→                onClick={() => applyOne(btn)}
+   525→                onMouseEnter={() => setHoverOp(btn)}
+   526→                onMouseLeave={() => setHoverOp(null)}
+   527→                onFocus={() => setHoverOp(btn)}
+   528→                onBlur={() => setHoverOp(null)}
+   529→                aria-label={tq.opAria(btn.label)}
+   530→                aria-describedby="gate-blurb-2q"
+   531→                className="group/gate flex h-16 flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-quantum-navy/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--gate-accent)_60%,transparent)] hover:shadow-[0_0_18px_color-mix(in_srgb,var(--gate-accent)_25%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-quantum-blue"
+   532→                style={{ "--gate-accent": btn.accent } as React.CSSProperties}
+   533→              >
+   534→                <span className="font-mono text-sm font-bold" style={{ color: btn.accent }} dir="ltr">
+   535→                  {btn.label}
+   536→                </span>
+   537→              </button>
+   538→            ))}
+   539→          </div>
+   540→          <div
+   541→            id="gate-blurb-2q"
+   542→            aria-live="polite"
+   543→            className="mt-3 min-h-[3.25rem] rounded-lg border border-white/5 bg-quantum-navy/60 px-3 py-2.5 text-xs leading-relaxed text-quantum-subtle"
+   544→          >
+   545→            {hoverOp ? (
+   546→              <span>
+   547→                <span className="me-1.5 font-mono font-bold" style={{ color: hoverOp.accent }} dir="ltr">
+   548→                  {hoverOp.label}
+   549→                </span>
+   550→                {hoverOp.blurb}
+   551→              </span>
+   552→            ) : (
+   553→              <span className="opacity-50" dir={isAr ? "rtl" : "ltr"}>
+   554→                {tq.gates2Hint}
+   555→              </span>
+   556→            )}
+   557→          </div>
+   558→          {/* the two-gate recipe — a cheat sheet that fits on one line */}
+   559→          <p
+   560→            className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-[#FF6B9D]/25 bg-[#FF6B9D]/[0.04] px-3 py-2 text-[11px] text-quantum-subtle"
+   561→            dir={isAr ? "rtl" : "ltr"}
+   562→          >
+   563→            <Wand2 className="h-3.5 w-3.5 shrink-0 text-[#FF6B9D]" aria-hidden="true" />
+   564→            <span className="font-mono text-[10px] tracking-[0.2em] text-[#FF6B9D]/80">{tq.recipeLabel}</span>
+   565→            <span className="font-mono" dir="ltr">{tq.recipe}</span>
+   566→          </p>
+   567→        </div>
+   568→
+   569→        {/* two-lane circuit */}
+   570→        <div>
+   571→          <h3 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold text-white">
+   572→            <CircuitBoard className="h-4 w-4 text-quantum-blue" />
+   573→            {tq.circuit2Title}
+   574→            {circuit.length > 0 && (
+   575→              <span className="ms-auto font-mono text-[10px] text-quantum-subtle" dir="ltr">
+   576→                {circuit.length} op{circuit.length === 1 ? "" : "s"}
+   577→              </span>
+   578→            )}
+   579→          </h3>
+   580→          <div
+   581→            dir="ltr"
+   582→            className="relative min-h-[88px] overflow-hidden rounded-lg border border-quantum-blue/15 bg-quantum-navy/70 px-3"
+   583→          >
+   584→            {/* the two lanes */}
+   585→            <div className="pointer-events-none absolute inset-x-3 top-[26px] h-px bg-gradient-to-r from-transparent via-quantum-blue/40 to-transparent" aria-hidden="true" />
+   586→            <div className="pointer-events-none absolute inset-x-3 top-[62px] h-px bg-gradient-to-r from-transparent via-quantum-purple/40 to-transparent" aria-hidden="true" />
+   587→            {/* lane tags */}
+   588→            <span className="pointer-events-none absolute start-3 top-[16px] font-mono text-[9px] text-quantum-blue/70" aria-hidden="true">
+   589→              q0
+   590→            </span>
+   591→            <span className="pointer-events-none absolute start-3 top-[52px] font-mono text-[9px] text-quantum-purple/70" aria-hidden="true">
+   592→              q1
+   593→            </span>
+   594→            {visibleOps.length === 0 ? (
+   595→              <span className="relative z-10 flex h-[88px] w-full items-center justify-center font-mono text-xs text-quantum-subtle/70">
+   596→                {tq.emptyCircuit2}
+   597→              </span>
+   598→            ) : (
+   599→              <div className="relative z-10 flex w-full items-center gap-1.5 py-2 ps-6">
+   600→                {hiddenCount > 0 && (
+   601→                  <span className="font-mono text-[10px] text-quantum-subtle">+{hiddenCount}</span>
+   602→                )}
+   603→                <AnimatePresence initial={false}>
+   604→                  {visibleOps.map((op, idx) => (
+   605→                    <OpColumn key={`${idx}-${op.kind}-${op.kind === "gate" ? op.symbol + op.target : op.control}`} op={op} />
+   606→                  ))}
+   607→                </AnimatePresence>
+   608→                {/* metering terminals at the end of both lanes */}
+   609→                <motion.span
+   610→                  className="ms-auto flex flex-col justify-center gap-[22px] py-2"
+   611→                  animate={{
+   612→                    filter: [
+   613→                      "drop-shadow(0 0 0 rgba(0,217,255,0))",
+   614→                      "drop-shadow(0 0 6px rgba(0,217,255,0.6))",
+   615→                      "drop-shadow(0 0 0 rgba(0,217,255,0))",
+   616→                    ],
+   617→                  }}
+   618→                  transition={{ duration: 2.4, repeat: Infinity }}
+   619→                  aria-hidden="true"
+   620→                >
+   621→                  <span className="flex h-6 w-6 items-center justify-center rounded border border-quantum-blue/40 bg-quantum-navy font-mono text-[10px] text-quantum-blue">
+   622→                    ⌖
+   623→                  </span>
+   624→                  <span className="flex h-6 w-6 items-center justify-center rounded border border-quantum-purple/40 bg-quantum-navy font-mono text-[10px] text-quantum-purple">
+   625→                    ⌖
+   626→                  </span>
+   627→                </motion.span>
+   628→              </div>
+   629→            )}
+   630→          </div>
+   631→        </div>
+   632→
+   633→        {/* presets */}
+   634→        <div>
+   635→          <h3 className="mb-3 flex items-center gap-2 font-heading text-sm font-bold text-white">
+   636→            <Orbit className="h-4 w-4 text-quantum-green" />
+   637→            {tq.presets2Title}
+   638→          </h3>
+   639→          <div className="flex flex-wrap gap-2">
+   640→            {TWO_PRESETS.map((preset) => {
+   641→              // Entangled presets wear a pulsing pink badge — visual taxonomy:
+   642→              // pink dot = maximally entangled member of the gallery.
+   643→              const presetBell = concurrence(preset.state) > 0.99;
+   644→              return (
+   645→                <button
+   646→                  key={preset.label}
+   647→                  type="button"
+   648→                  onClick={() => loadPreset(preset.state)}
+   649→                  title={tx(preset.note)}
+   650→                  aria-label={tq.preset2Aria(preset.label)}
+   651→                  className="flex items-center gap-1.5 rounded-lg border border-quantum-green/25 bg-quantum-navy/70 px-3 py-2 font-mono text-sm text-quantum-green transition-all duration-200 hover:-translate-y-0.5 hover:border-quantum-green/60 hover:shadow-[0_0_16px_rgba(0,184,148,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-quantum-green"
+   652→                  dir="ltr"
+   653→                >
+   654→                  {presetBell && (
+   655→                    <span
+   656→                      className="h-1.5 w-1.5 rounded-full bg-[#FF6B9D] shadow-[0_0_6px_#FF6B9D]"
+   657→                      aria-hidden="true"
+   658→                    />
+   659→                  )}
+   660→                  {preset.label}
+   661→                </button>
+   662→              );
+   663→            })}
+   664→          </div>
+   665→        </div>
+   666→
+   667→        {/* actions */}
+   668→        <div className="mt-auto flex flex-wrap gap-2 border-t border-white/5 pt-5">
+   669→          <Button
+   670→            type="button"
+   671→            onClick={measureOnce}
+   672→            className="min-h-11 flex-1 bg-quantum-blue font-heading text-quantum-navy shadow-[0_0_20px_rgba(0,217,255,0.25)] hover:bg-quantum-blue/85 hover:shadow-[0_0_30px_rgba(0,217,255,0.45)] sm:flex-none"
+   673→          >
+   674→            <Dices className="me-1.5 h-4 w-4" />
+   675→            {pg.measure}
+   676→          </Button>
+   677→          <Button
+   678→            type="button"
+   679→            onClick={runShots}
+   680→            variant="outline"
+   681→            className="min-h-11 flex-1 border-quantum-purple/40 bg-transparent font-heading text-quantum-purple hover:bg-quantum-purple/10 hover:text-quantum-purple sm:flex-none"
+   682→          >
+   683→            <Dices className="me-1.5 h-4 w-4" />
+   684→            {pg.shots}
+   685→          </Button>
+   686→          <Button
+   687→            type="button"
+   688→            onClick={undo}
+   689→            disabled={history.length === 0}
+   690→            variant="ghost"
+   691→            className="min-h-11 font-heading text-quantum-subtle hover:bg-white/5 hover:text-white"
+   692→          >
+   693→            <Undo2 className="me-1.5 h-4 w-4" />
+   694→            {pg.undo}
+   695→          </Button>
+   696→          <Button
+   697→            type="button"
+   698→            onClick={reset}
+   699→            variant="ghost"
+   700→            className="min-h-11 font-heading text-quantum-subtle hover:bg-white/5 hover:text-white"
+   701→          >
+   702→            <RotateCcw className="me-1.5 h-4 w-4" />
+   703→            {pg.reset}
+   704→          </Button>
+   705→        </div>
+   706→      </QuantumCard>
+   707→
+   708→      {/* ── Full-width histogram strip over the 4-outcome basis ── */}
+   709→      <div className="lg:col-span-2" role="status" aria-live="polite" aria-label={pg.resultAria}>
+   710→        <span className="sr-only">{liveMsg}</span>
+   711→        <AnimatePresence mode="wait">
+   712→          {shots && (
+   713→            <motion.div
+   714→              key={shots.join("-")}
+   715→              initial={{ opacity: 0, y: 16 }}
+   716→              animate={{ opacity: 1, y: 0 }}
+   717→              exit={{ opacity: 0, y: -8 }}
+   718→              className="rounded-2xl border border-quantum-blue/15 bg-quantum-secondary/70 p-5 backdrop-blur-sm"
+   719→            >
+   720→              <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+   721→                <div className="space-y-2.5">
+   722→                  {shots.map((n, i) => (
+   723→                    <div key={i} className="flex items-center gap-3">
+   724→                      <span dir="ltr" className="w-12 shrink-0 font-mono text-sm" style={{ color: JOINT_COLORS[i] }}>
+   725→                        {ketLabel(i)}
+   726→                      </span>
+   727→                      <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   728→                        <motion.div
+   729→                          className="h-full rounded-full"
+   730→                          style={{ background: JOINT_COLORS[i], boxShadow: `0 0 14px ${JOINT_COLORS[i]}66` }}
+   731→                          initial={{ width: 0 }}
+   732→                          animate={{ width: `${n}%` }}
+   733→                          transition={{ type: "spring", stiffness: 60, damping: 16 }}
+   734→                        />
+   735→                      </div>
+   736→                      <span dir="ltr" className="w-8 shrink-0 text-end font-mono text-sm text-white">
+   737→                        {n}
+   738→                      </span>
+   739→                    </div>
+   740→                  ))}
+   741→                </div>
+   742→                <div className="text-center sm:text-start">
+   743→                  <p className="text-sm text-quantum-subtle" dir={isAr ? "rtl" : "ltr"}>
+   744→                    {tq.shotsSummary2(
+   745→                      shots.map((n, i) => `${n}× ${ketLabel(i)}`).filter((s) => !s.startsWith("0×")).join(" · ")
+   746→                    )}
+   747→                  </p>
+   748→                  <p className="mt-1 text-[11px] italic text-quantum-subtle/70">
+   749→                    {pg.histogramNote}
+   750→                  </p>
+   751→                </div>
+   752→              </div>
+   753→            </motion.div>
+   754→          )}
+   755→        </AnimatePresence>
+   756→      </div>
+   757→
+   758→      {/* ── Pedagogy footer — the Phase-2 pitch inside the toy ── */}
+   759→      <motion.div variants={quantumVariants} className="lg:col-span-2">
+   760→        <div className="relative overflow-hidden rounded-2xl border border-[#FF6B9D]/15 bg-gradient-to-br from-quantum-navy/90 to-quantum-secondary/60 p-6 md:p-8">
+   761→          <span
+   762→            aria-hidden="true"
+   763→            className="pointer-events-none absolute -top-6 end-6 select-none font-heading text-[7rem] font-black leading-none text-white/[0.04]"
+   764→            dir="ltr"
+   765→          >
+   766→            ⊗
+   767→          </span>
+   768→          <p className="max-w-3xl text-sm leading-relaxed text-quantum-subtle md:text-base" dir={isAr ? "rtl" : "ltr"}>
+   769→            {tq.pedagogy2Pre}
+   770→            <span className="font-heading font-bold text-[#FF6B9D]">{tq.pedagogy2Accent}</span>
+   771→            {tq.pedagogy2Post}
+   772→          </p>
+   773→        </div>
+   774→      </motion.div>
+   775→    </motion.div>
+   776→  );
+   777→}
+   778→
