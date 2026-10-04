@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -29,4 +23,16 @@ model Post {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Partnership / funding signals captured from the landing page form.
+/// Each row is one "measurement" — a visitor collapsing the wavefunction.
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  org       String?
+  email     String
+  interest  String   @default("funding") // funding | partnership | join | other
+  message   String
+  createdAt DateTime @default(now())
 }

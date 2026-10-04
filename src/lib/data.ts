@@ -6,6 +6,8 @@
 
 /* ------------------------------- Team -------------------------------- */
 
+export type TeamGroup = "leads" | "research" | "tech" | "ops" | "media" | "open";
+
 export interface TeamMember {
   name: string;
   role: string;
@@ -13,6 +15,8 @@ export interface TeamMember {
   skills: string[];
   /** tailwind gradient classes for the avatar halo */
   gradient: string;
+  /** filter group shown in the team section */
+  group: TeamGroup;
   /** open founding seat rendered with dashed border */
   open?: boolean;
 }
@@ -24,6 +28,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "4th Year · Computer Science",
     skills: ["Leadership", "Quantum Algorithms", "Strategy"],
     gradient: "from-quantum-blue/80 to-quantum-blue/20",
+    group: "leads",
   },
   {
     name: "Mohamed Raafat Mohamed",
@@ -31,6 +36,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Physics",
     skills: ["Qiskit", "Python", "Circuit Design"],
     gradient: "from-quantum-purple/80 to-quantum-purple/20",
+    group: "tech",
   },
   {
     name: "Elsayed Ramdan Labib",
@@ -38,6 +44,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "4th Year · Physics",
     skills: ["Quantum Theory", "VQE", "Scientific Writing"],
     gradient: "from-quantum-green/80 to-quantum-green/20",
+    group: "research",
   },
   {
     name: "Basmalla Ahmed Awad",
@@ -45,6 +52,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Computer Science",
     skills: ["Curriculum Design", "Qiskit", "Teaching"],
     gradient: "from-quantum-amber/80 to-quantum-amber/20",
+    group: "ops",
   },
   {
     name: "Nada Ehab Ahmed",
@@ -52,6 +60,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "4th Year · Communications Eng.",
     skills: ["Industry Liaison", "Public Speaking"],
     gradient: "from-quantum-blue/80 to-quantum-purple/30",
+    group: "ops",
   },
   {
     name: "Youssef Mohammed Eldabaa",
@@ -59,6 +68,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Mathematics",
     skills: ["QAOA", "Linear Algebra", "Python"],
     gradient: "from-quantum-purple/80 to-quantum-blue/30",
+    group: "research",
   },
   {
     name: "Salma Mohamed Ghoniem",
@@ -66,6 +76,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Physics",
     skills: ["Aer Simulator", "NumPy", "HPC"],
     gradient: "from-quantum-green/80 to-quantum-blue/30",
+    group: "tech",
   },
   {
     name: "Sara Emad Hassan",
@@ -73,6 +84,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "2nd Year · Computer Science",
     skills: ["Content Creation", "Community"],
     gradient: "from-quantum-amber/80 to-quantum-red/30",
+    group: "media",
   },
   {
     name: "Shahenda Ahmed Khalil",
@@ -80,6 +92,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "4th Year · Physics",
     skills: ["Logistics", "Scheduling", "Reporting"],
     gradient: "from-quantum-blue/80 to-quantum-green/30",
+    group: "ops",
   },
   {
     name: "Menna Osama Mohammed",
@@ -87,6 +100,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Computer Science",
     skills: ["Technical Writing", "Git", "Docs"],
     gradient: "from-quantum-purple/80 to-quantum-green/30",
+    group: "ops",
   },
   {
     name: "Mohamed Tamer Ismail",
@@ -94,6 +108,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "4th Year · Computer Engineering",
     skills: ["AWS Braket", "IBM Quantum", "Linux"],
     gradient: "from-quantum-green/80 to-quantum-purple/30",
+    group: "tech",
   },
   {
     name: "Malak Asaad Ismail",
@@ -101,6 +116,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "2nd Year · Information Systems",
     skills: ["UI/UX", "Figma", "Branding"],
     gradient: "from-quantum-amber/80 to-quantum-purple/30",
+    group: "media",
   },
   {
     name: "Somaia Adel Mohamed",
@@ -108,6 +124,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "3rd Year · Physics",
     skills: ["Event Planning", "Hackathons", "Qiskit"],
     gradient: "from-quantum-red/80 to-quantum-blue/30",
+    group: "ops",
   },
   {
     name: "|0⟩",
@@ -115,6 +132,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "Could be you — apply now",
     skills: ["Apply via email"],
     gradient: "from-quantum-subtle/60 to-quantum-subtle/10",
+    group: "open",
     open: true,
   },
   {
@@ -123,6 +141,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     year: "Could be you — apply now",
     skills: ["Apply via email"],
     gradient: "from-quantum-subtle/60 to-quantum-subtle/10",
+    group: "open",
     open: true,
   },
 ];
@@ -463,4 +482,5 @@ export const NAV_LINKS = [
   { href: "#methodology", label: "Methodology" },
   { href: "#budget", label: "Budget" },
   { href: "#team", label: "Team" },
+  { href: "#contact", label: "Contact" },
 ] as const;

@@ -91,7 +91,7 @@ export default function BudgetCalculator() {
         </motion.div>
 
         <SectionHeading
-          eyebrow="SECTION 06 — BUDGET"
+          eyebrow="SECTION 04 — BUDGET"
           title="Where Every Dollar Goes"
           subtitle="Drag the slider and watch the lab take shape. Allocation proportions are locked to the audited plan — the ring shows how much of the full lab your investment ignites."
         />

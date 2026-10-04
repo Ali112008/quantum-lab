@@ -71,6 +71,16 @@
   --animate-orbit: orbit 14s linear infinite;
   --animate-bob: bob 2s ease-in-out infinite;
   --animate-blink: blink 1.2s step-end infinite;
+  --animate-marquee: marquee 38s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 
   @keyframes float {
     0%,

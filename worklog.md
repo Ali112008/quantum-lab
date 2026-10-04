@@ -36,3 +36,26 @@ Stage Summary:
 - Suggested next phases: Arabic/English i18n toggle (next-intl already installed), a downloadable one-page PDF proposal, contact/partnership form backed by a Prisma API route, team photo uploads, OG share image.
 
 ---
+Task ID: 2-a
+Agent: Z.ai Code (cron webDevReview round 1)
+Task: Assess project status, QA via agent-browser, then add new features (mandatory: more styling detail + more functionality).
+
+Work Log:
+- QA regression pass: page loads clean, zero console/page errors, dev.log clean. Prior phase (Task 1) confirmed stable.
+- Fullstack feature — partnership form:
+  - `prisma/schema.prisma`: added `Inquiry` model (name, org, email, interest enum-ish string, message, createdAt); `bun run db:push` OK (SQLite db/custom.db).
+  - `src/app/api/inquiries/route.ts`: POST (zod-validated create, 400 with field issues on invalid) + GET (public aggregate: total + latestAt, no-store). Verified live: POST 201 in 57ms, GET 200.
+  - `src/components/ContactSection.tsx` (SECTION 07 — MAKE CONTACT): react-hook-form + zodResolver, shadcn Input/Textarea/Select/Button, radix toast on success/error, animated "Signal Received" success state with "send another", live SignalCounter pill ("N SIGNALS RECEIVED — YOU'D BE MEASUREMENT #N+1") fed by GET /api/inquiries. Character counter 0/2000, avg response note.
+- New section — `src/components/Scoreboard.tsx` (SECTION 05 — THE SCOREBOARD, id=scoreboard): uses previously-unused YEAR3_OUTCOMES — 6 outcome tiles (200/15/5/3/2/1) with per-color animated counters + hover glow beam; "$50K exchange rate" comparison (elsewhere strikethrough vs here, fadeInLeft/Right); ten-year "$1 → $100" banner with sweeping light sweep.
+- Styling details: `src/components/QuantumTicker.tsx` — seamless CSS marquee strip (marquee keyframes added to globals.css @theme) of quantum vocabulary + achievements between Hero and Problem; quantum scroll-to-top floating qubit button (appears >650px scroll).
+- Team section upgrade: discipline filter chips (All 15 / Leads / Research / Tech / Ops & Events / Media & Design / Open Seats) — added `group` field to all 15 TEAM_MEMBERS, AnimatePresence popLayout + layout re-flow animation, aria-pressed/aria-live.
+- Navigation: added "Contact" link to NAV_LINKS; footer id changed contact→footer to avoid duplicate anchor; section numbering normalized (01 Problem, 02 Solution, 03 Circuit, 04 Budget, 05 Scoreboard, 06 Team, 07 Make Contact).
+- `bun run lint` clean after all changes.
+
+Stage Summary:
+- Browser-verified this round: form full round-trip (fill → POST 201 → success state + toast → GET shows total:1 in DB); team filter shows 2 research members when Research active; scoreboard tiles + comparison cards render with animations; ticker marquee scrolls; scroll-to-top qubit appears; Contact link in navbar works.
+- Current status: stable, feature-rich MVP+ landing (10 sections + fullstack inquiry pipeline).
+- Risks/notes: DB grows unbounded from public form (spam risk — consider rate limiting/honeypot later); signal counter not persisted across nav (fetch on mount, fine for MVP); admin has no dashboard for inquiries yet (read via prisma studio or API).
+- Next-phase recommendations (priority order): 1) AR/EN bilingual toggle (grant guide is Arabic — funders likely Arabic-first; next-intl installed) with RTL layout support; 2) simple admin page or email digest for inquiries (protected); 3) downloadable one-page PDF proposal (print stylesheet or generated PDF); 4) OG share image + sitemap; 5) rate-limit + honeypot on POST /api/inquiries.
+
+---

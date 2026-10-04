@@ -21,7 +21,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer id="contact" className="relative mt-auto border-t border-quantum-blue/10" aria-label="Contact and partnership">
+    <footer id="footer" className="relative mt-auto border-t border-quantum-blue/10" aria-label="Contact and partnership">
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-quantum-blue/40 to-transparent" />
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_100%,rgba(0,217,255,0.07),transparent_70%)]" />
 
