@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Coins } from "lucide-react";
+import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Coins, Share2, Link2, Twitter, Linkedin, MessageCircle } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
 import FundingTube, { PledgePrefill } from "@/components/ui/FundingTube";
@@ -71,10 +71,51 @@ function SignalCounter() {
   );
 }
 
+/**
+ * Share pill button — one of five on-ramps that re-emit the proposal's URL.
+ * `window.open(..., "noopener")` (not <a href>) keeps SSR honest: the target
+ * URL only exists at click-time inside the browser, so no hydration
+ * mismatch is possible. noopener prevents tab-nabbing on external hosts.
+ */
+function SharePill({
+  onClick,
+  icon,
+  label,
+  featured = false,
+}: {
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+  featured?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 font-heading text-xs font-bold transition-all ${
+        featured
+          ? "border-quantum-blue/60 bg-quantum-blue/15 text-quantum-blue hover:bg-quantum-blue/25 hover:shadow-[0_0_18px_rgba(0,217,255,0.35)]"
+          : "border-white/10 bg-quantum-secondary/70 text-quantum-text/85 hover:border-quantum-blue/50 hover:bg-quantum-blue/10 hover:text-quantum-blue hover:shadow-[0_0_16px_rgba(0,217,255,0.22)]"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
 export default function ContactSection() {
   const { toast } = useToast();
   const { t, lang } = useLang();
   const [submitted, setSubmitted] = useState(false);
+
+  /* navigator.share exists only on capable devices — detect after mount so
+     SSR output stays deterministic (no hydration mismatch). On unsupported
+     browsers the pill disappears and Copy link takes over its job. */
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
 
   /** Tier cards can prefill the pledge-intent form inside <FundingTube/>:
       a new object identity per click makes the tube's prefill effect fire. */
@@ -131,6 +172,39 @@ export default function ContactSection() {
   });
 
   const interest = watch("interest");
+
+  /* ── share handlers ── the URL is read at click-time (window.location),
+     so the module is deploy-agnostic: sandbox preview, Vercel, or a
+     university domain all share their own address automatically. */
+  const pageUrl = () => `${window.location.origin}/`;
+
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({ title: document.title, text: t.contact.shareText, url: pageUrl() });
+    } catch (err) {
+      /* user dismissed the share sheet (AbortError) — silence is polite */
+      if (!(err instanceof DOMException && err.name === "AbortError")) {
+        toast({ title: t.contact.shareToastCopiedTitle, description: t.contact.shareToastCopiedDesc });
+      }
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${t.contact.shareText} ${pageUrl()}`);
+      toast({ title: t.contact.shareToastCopiedTitle, description: t.contact.shareToastCopiedDesc });
+    } catch {
+      toast({
+        title: t.contact.shareToastCopiedTitle,
+        description: pageUrl(),
+      });
+    }
+  };
+
+  const openExternal = (base: string, params: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString();
+    window.open(`${base}${base.includes("?") ? "&" : "?"}${qs}`, "_blank", "noopener,noreferrer");
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -291,6 +365,64 @@ export default function ContactSection() {
               {t.contact.qrTitle}
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-quantum-subtle">{t.contact.qrCaption}</p>
+          </div>
+        </motion.div>
+
+        {/* ══ AMPLIFY THE SIGNAL — the viral loop for the pitch itself.
+            One tap re-emits the proposal to a funder's own network:
+            native share sheet → clipboard → X → LinkedIn → WhatsApp
+            (WhatsApp matters: it IS the academic social graph in Egypt).
+            All targets are computed at click-time, so the module works
+            unchanged on any future domain. ══ */}
+        <motion.div
+          variants={quantumVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          className="mx-auto mb-10 flex flex-col items-center gap-3"
+          role="group"
+          aria-label={t.contact.shareAria}
+        >
+          <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.3em] text-quantum-purple">
+            <Share2 className="size-3.5" aria-hidden="true" />
+            {t.contact.shareEyebrow}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {canShare && (
+              <SharePill
+                onClick={() => void handleNativeShare()}
+                icon={<Share2 className="size-3.5" aria-hidden="true" />}
+                label={t.contact.shareBtnNative}
+                featured
+              />
+            )}
+            <SharePill
+              onClick={() => void handleCopyLink()}
+              icon={<Link2 className="size-3.5" aria-hidden="true" />}
+              label={t.contact.shareBtnCopy}
+            />
+            <SharePill
+              onClick={() =>
+                openExternal("https://twitter.com/intent/tweet", {
+                  text: t.contact.shareText,
+                  url: pageUrl(),
+                })
+              }
+              icon={<Twitter className="size-3.5" aria-hidden="true" />}
+              label={t.contact.shareBtnX}
+            />
+            <SharePill
+              onClick={() => openExternal("https://www.linkedin.com/sharing/share-offsite", { url: pageUrl() })}
+              icon={<Linkedin className="size-3.5" aria-hidden="true" />}
+              label={t.contact.shareBtnLinkedIn}
+            />
+            <SharePill
+              onClick={() =>
+                openExternal("https://wa.me/", { text: `${t.contact.shareText} ${pageUrl()}` })
+              }
+              icon={<MessageCircle className="size-3.5" aria-hidden="true" />}
+              label={t.contact.shareBtnWhatsApp}
+            />
           </div>
         </motion.div>
 

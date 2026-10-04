@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { quantumVariants, viewport } from "@/lib/animations";
 import { useLang } from "@/lib/LanguageProvider";
 import { FUNDRAISING } from "@/lib/data";
+import { timeAgo } from "@/lib/timeAgo";
 
 /**
  * ROAD TO $50,000 — the live, Prisma-backed funding tube.
@@ -63,7 +64,7 @@ const TIER_DOT: Record<string, string> = {
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 export default function FundingTube({ prefill }: { prefill?: PledgePrefill | null }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { toast } = useToast();
 
   // ---- live summary state ----
@@ -346,6 +347,12 @@ export default function FundingTube({ prefill }: { prefill?: PledgePrefill | nul
                       <span className="truncate text-xs font-medium text-quantum-text/90">{p.name}</span>
                       <span className="shrink-0 font-mono text-[9px] tracking-wider text-quantum-subtle/70">
                         {t.contact.pledgeTierNames[p.tier as keyof typeof t.contact.pledgeTierNames] ?? t.contact.pledgeTierNames.custom}
+                      </span>
+                      {/* confirmed-at, relative: "6d ago" / "قبل 6 أيام" — Intl
+                          handles the Arabic 1/2/3-10+ plural forms for us;
+                          client-fetched data only, so hydration-safe */}
+                      <span className="shrink-0 text-[9px] text-quantum-subtle/45">
+                        {timeAgo(p.at, lang)}
                       </span>
                     </span>
                     <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-quantum-amber" dir="ltr">

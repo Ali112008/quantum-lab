@@ -344,6 +344,21 @@
       box-shadow: 0 0 60px rgba(0,0,0,0.45);
     }
   }
+    /* == QR-TILE CSS (stamped by stamp-qr.py — do not hand-edit) == */
+    .qr-tile { flex-shrink: 0; text-align: center; }
+    .qr-tile .qr-frame {
+      width: 78px; height: 78px; padding: 6px;
+      background: #FFFFFF; border-radius: 9px;
+      border: 1.5px solid rgba(0,217,255,0.65);
+      box-shadow: 0 0 16px rgba(0,217,255,0.22);
+      box-sizing: border-box;
+    }
+    .qr-tile img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+    .qr-tile .qr-cap {
+      margin-top: 5px; font-size: 8px; letter-spacing: 0.16em;
+      color: var(--c-subtle); font-weight: 700;
+    }
+    .qr-tile .qr-cap b { color: var(--c-accent); font-weight: 800; }
 </style>
 </head>
 <body>
@@ -523,10 +538,16 @@
   </div>
 
   <!-- ============ FOOTER ============ -->
-  <footer>
+<footer>
     <div class="quote">
       "Your seed is not our business model. <em>It is our ignition</em> — and ignition fires only once."
     </div>
+    <!-- QR-TILE (stamped by stamp-qr.py — mailto mode (domain-free, print-safe)) -->
+    <div class="qr-tile" aria-label="mailto:quantum.lab@university.edu.eg?subject=Funding%20%E2%80%94%20Quantum%20Research%20Lab">
+      <div class="qr-frame"><img src="data:image/png;base64,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" alt="QR code"></div>
+      <div class="qr-cap"><b>SCAN</b> · FUND · CONNECT</div>
+    </div>
+    <!-- /QR-TILE -->
     <div class="contact">
       <span class="mail">quantum.lab@university.edu.eg</span><br>
       Dept. of Physics &amp; Computer Science · Cairo, Egypt<br>

@@ -10,6 +10,8 @@ Mirrors download/proposal/quantum-lab-one-pager.html (EN, LTR) with:
 
 Output: download/proposal/quantum-lab-one-pager-ar.html
 Then render with skills/pdf/scripts/html2poster.js → public/proposal/.
+NOTE: after ANY regeneration of the HTML, re-run stamp-qr.py to (re)inject
+the footer QR tile, then re-render the PDFs (see stamp-qr.py header).
 """
 import base64
 from pathlib import Path

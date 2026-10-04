@@ -300,6 +300,15 @@ a:focus-visible {
   outline-offset: 3px;
   border-radius: 6px;
 }
+/* Same halo for raw <button> elements — but only for buttons that do NOT
+   already carry a Tailwind focus-visible:ring-* utility (shadcn/ui Button,
+   form controls, chips…), so we never draw two competing halos at once.
+   The [class~=…] test matches the literal utility token in the class list. */
+button:focus-visible:not([class~="focus-visible:ring-2"]):not([class~="focus-visible:ring-1"]):not([class~="focus-visible:ring"]):not([class~="focus-visible:outline-none"]) {
+  outline: 2px solid rgba(0, 217, 255, 0.85);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
 /* Film-grain noise texture — a faint quantum vacuum flicker over the
    page (fixed, non-interactive, between the particle canvas and the
    content). Pure CSS: zero JS, zero layout cost. */
@@ -312,3 +321,82 @@ a:focus-visible {
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+
+/* ------------------------------------------------------------------ */
+/*  PRINT — a curated paper snapshot of the pitch                      */
+/*  (Ctrl/Cmd+P → PDF). The dedicated one-pager PDF stays the primary  */
+/*  print artifact; this makes an accidental print still look          */
+/*  intentional instead of a dark ink-destroying wall of chrome.       */
+/* ------------------------------------------------------------------ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  /* Interactive chrome: sticky navbar, particle canvas, film-grain,
+     floating back-to-top ring (position:fixed elements would otherwise
+     repeat on every printed page). */
+  header,
+  canvas,
+  .noise-veil,
+  button[class*="fixed"] {
+    display: none !important;
+  }
+
+  /* Forms are web-native — paper readers get the QR + email instead.
+     aria-hidden covers every purely decorative glow/ket/ghost too. */
+  form,
+  [aria-hidden="true"] {
+    display: none !important;
+  }
+
+  /* Panels must keep the dark theme (white text lives on it) —
+     print-color-adjust makes browsers preserve the brand ink. */
+  html,
+  body {
+    background: #0A192F !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Never slice a table row or list item across two pages. Scoping this to
+     SMALL units matters: avoid-rules on whole sections/cards that are taller
+     than one page force breaks and produce sheets of blank navy. */
+  tr,
+  li {
+    break-inside: avoid;
+  }
+
+  /* Expand every scroll container so collapsed lists (donor wall,
+     mobile menus…) print in full. */
+  .thin-scroll,
+  [class*="overflow-y-auto"],
+  [class*="overflow-auto"] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Animations are meaningless on paper. */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* THE CRITICAL PRINT FIX: framer-motion `whileInView` leaves below-the-fold
+     content at inline opacity:0 / translate offsets because printing never
+     scrolls. Author !important beats non-important inline styles, so forcing
+     the "revealed" state here makes every section print instead of producing
+     sheets of blank navy. Author !important beats non-important inline styles. */
+  *,
+  *::before,
+  *::after {
+    opacity: 1 !important;
+    transform: none !important;
+    scale: none !important;
+    translate: none !important;
+    rotate: none !important;
+  }
+}
+/* print snapshot v1 — see round 11 worklog */

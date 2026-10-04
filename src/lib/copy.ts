@@ -302,6 +302,17 @@ export interface Copy {
     tiersFeaturedBadge: string;
     qrTitle: string;
     qrCaption: string;
+    /** Share-the-page module (AMPLIFY THE SIGNAL): native share, copy, X, LinkedIn, WhatsApp. */
+    shareEyebrow: string;
+    shareAria: string;
+    shareText: string;
+    shareBtnNative: string;
+    shareBtnCopy: string;
+    shareBtnX: string;
+    shareBtnLinkedIn: string;
+    shareBtnWhatsApp: string;
+    shareToastCopiedTitle: string;
+    shareToastCopiedDesc: string;
     fundEyebrow: string;
     fundTitle: string;
     fundSub: string;
@@ -822,6 +833,17 @@ const en: Copy = {
     tiersFeaturedBadge: "THE ASK",
     qrTitle: "PREFER TO SCAN?",
     qrCaption: "Point your camera — a draft email to the lab opens instantly.",
+    shareEyebrow: "AMPLIFY THE SIGNAL",
+    shareAria: "Share this proposal",
+    shareText:
+      "Egypt's first student-led quantum lab — a $50,000 seed ignites a 3-year engine: 200 quantum-fluent graduates, publishable research, one first-mover lab. Play the Bell-test game on the live page:",
+    shareBtnNative: "Share",
+    shareBtnCopy: "Copy link",
+    shareBtnX: "Post",
+    shareBtnLinkedIn: "LinkedIn",
+    shareBtnWhatsApp: "WhatsApp",
+    shareToastCopiedTitle: "Link copied ✅",
+    shareToastCopiedDesc: "Send it to a colleague — entangled signals travel further.",
     fundEyebrow: "ROAD TO $50,000",
     fundTitle: "The seed round is open",
     fundSub:
@@ -1387,6 +1409,17 @@ const ar: Copy = {
     tiersFeaturedBadge: "المطلوب",
     qrTitle: "تفضّل المسح؟",
     qrCaption: "وجّه كاميرتك — يُفتح مسودة بريد إلى المختبر فورًا.",
+    shareEyebrow: "ضخّم الإشارة",
+    shareAria: "شارك هذا العرض",
+    shareText:
+      "أول مختبر كمومي بقيادة طلابية في مصر — بذرة 50,000 دولار تشعل محركًا لثلاث سنوات: 200 خريج طلاقًا كموميًا، وبحث قابل للنشر، وأول مختبر رائد في المنطقة. جرّب لعبة اختبار بِل على الصفحة:",
+    shareBtnNative: "مشاركة",
+    shareBtnCopy: "انسخ الرابط",
+    shareBtnX: "منشور",
+    shareBtnLinkedIn: "لينكدإن",
+    shareBtnWhatsApp: "واتساب",
+    shareToastCopiedTitle: "تم نسخ الرابط ✅",
+    shareToastCopiedDesc: "أرسله إلى زميلٍ — الإشارات المتشابكة تصل أبعد.",
     fundEyebrow: "الطريق إلى 50,000 دولار",
     fundTitle: "جولة التمويل التأسيسي مفتوحة",
     fundSub:
