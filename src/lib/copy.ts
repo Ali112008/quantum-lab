@@ -311,6 +311,35 @@ export interface Copy {
     fundEmpty: string;
     fundAria: string;
     fundMilestones: { at: string; label: string }[];
+    /** Live pledge pipeline (Road-to-$50K): intents → human confirm → counted. */
+    fundDisclaimer: string;
+    pledgeEyebrow: string;
+    pledgeIntro: string;
+    pledgeName: string;
+    pledgeNamePh: string;
+    pledgeEmail: string;
+    pledgeEmailPh: string;
+    pledgeAmount: string;
+    pledgeAmountPh: string;
+    pledgeMessage: string;
+    pledgeMessageOptional: string;
+    pledgeMessagePh: string;
+    pledgeSubmit: string;
+    pledgeSubmitting: string;
+    pledgeSuccessTitle: string;
+    pledgeSuccessBody: string;
+    pledgeAnother: string;
+    pledgePendingNote: (n: number) => string;
+    pledgeWallTitle: string;
+    pledgeTierNames: { qubit: string; gate: string; founding: string; custom: string };
+    pledgeAria: string;
+    pledgeZodName: string;
+    pledgeZodEmail: string;
+    pledgeZodAmount: string;
+    pledgeToastTitle: string;
+    pledgeToastDesc: string;
+    pledgeToastErrorTitle: string;
+    tierPledgeCta: string;
     name: string;
     namePh: string;
     email: string;
@@ -807,6 +836,40 @@ const en: Copy = {
       { at: "$5,000", label: "first gate" },
       { at: "$50,000", label: "full lab" },
     ],
+    fundDisclaimer:
+      "Only verified money moves the tube — every intent is confirmed by the team before it counts.",
+    pledgeEyebrow: "PLEDGE INTENT",
+    pledgeIntro:
+      "Commit now, settle later. Record an intent — the team confirms it with you personally, then your qubit joins the tube.",
+    pledgeName: "Name",
+    pledgeNamePh: "Dr. Ahmed Hassan",
+    pledgeEmail: "Email",
+    pledgeEmailPh: "you@agency.org",
+    pledgeAmount: "Amount (USD)",
+    pledgeAmountPh: "500",
+    pledgeMessage: "Note",
+    pledgeMessageOptional: "(optional)",
+    pledgeMessagePh: "A word to the lab…",
+    pledgeSubmit: "Record Pledge",
+    pledgeSubmitting: "Recording…",
+    pledgeSuccessTitle: "Pledge Recorded",
+    pledgeSuccessBody:
+      "Your intent is now in pending superposition. A team member will confirm it with you by email — only then does it move the tube.",
+    pledgeAnother: "Record another pledge",
+    pledgePendingNote: (n) => {
+      if (n === 1) return "1 PLEDGE INTENT AWAITING CONFIRMATION";
+      return `${n} PLEDGE INTENTS AWAITING CONFIRMATION`;
+    },
+    pledgeWallTitle: "ON THE DONOR WALL",
+    pledgeTierNames: { qubit: "Qubit", gate: "Gate", founding: "Founding", custom: "Friend" },
+    pledgeAria: "Pledge intent form",
+    pledgeZodName: "Name must be at least 2 characters",
+    pledgeZodEmail: "Please enter a valid email address",
+    pledgeZodAmount: "Enter a whole dollar amount between $1 and $50,000",
+    pledgeToastTitle: "Pledge recorded ✅",
+    pledgeToastDesc: "Your intent is pending confirmation — we'll reach out to verify.",
+    pledgeToastErrorTitle: "Decoherence detected",
+    tierPledgeCta: "Pledge online",
     name: "Name",
     namePh: "Dr. Ahmed Hassan",
     email: "Email",
@@ -1338,6 +1401,42 @@ const ar: Copy = {
       { at: "5,000$", label: "أول بوابة" },
       { at: "50,000$", label: "المختبر الكامل" },
     ],
+    fundDisclaimer:
+      "لا تُحرِّك الأنبوب إلا الأموال المتحقَّق منها — كل نيّة يؤكّدها الفريق قبل أن تُحتسب.",
+    pledgeEyebrow: "تسجيل نية تعهُّد",
+    pledgeIntro:
+      "تعهَّد الآن ويسُدَّ لاحقًا. سجّل نيّتك — يؤكّدها الفريق معك شخصيًا، فيلتحق كيوبتك بالأنبوب.",
+    pledgeName: "الاسم",
+    pledgeNamePh: "د. أحمد حسن",
+    pledgeEmail: "البريد الإلكتروني",
+    pledgeEmailPh: "you@agency.org",
+    pledgeAmount: "المبلغ (دولار)",
+    pledgeAmountPh: "500",
+    pledgeMessage: "ملاحظة",
+    pledgeMessageOptional: "(اختياري)",
+    pledgeMessagePh: "كلمة إلى المختبر…",
+    pledgeSubmit: "سجّل التعهُّد",
+    pledgeSubmitting: "جارٍ التسجيل…",
+    pledgeSuccessTitle: "تم تسجيل التعهُّد",
+    pledgeSuccessBody:
+      "نيّتك الآن في تراكب مؤجَّل. سيتواصل معك أحد أعضاء الفريق عبر البريد للتأكيد — عندها فقط تُحرِّك الأنبوب.",
+    pledgeAnother: "سجّل تعهُّدًا آخر",
+    pledgePendingNote: (n) => {
+      if (n === 1) return "نية تعهُّد واحدة بانتظار التأكيد";
+      if (n === 2) return "نيتا تعهُّد بانتظار التأكيد";
+      if (n <= 10) return `${n} نيّات تعهُّد بانتظار التأكيد`;
+      return `${n} نيّة تعهُّد بانتظار التأكيد`;
+    },
+    pledgeWallTitle: "على جدار الداعمين",
+    pledgeTierNames: { qubit: "كيوبت", gate: "بوابة", founding: "مؤسِّس", custom: "صديق" },
+    pledgeAria: "نموذج نية التعهُّد",
+    pledgeZodName: "الاسم قصير جدًا — حرفان على الأقل",
+    pledgeZodEmail: "أدخل بريدًا إلكترونيًا صحيحًا",
+    pledgeZodAmount: "أدخل مبلغًا صحيحًا بين 1 و50,000 دولار",
+    pledgeToastTitle: "تم تسجيل التعهُّد ✅",
+    pledgeToastDesc: "نيّتك بانتظار التأكيد — سنتواصل معك للتحقق.",
+    pledgeToastErrorTitle: "رصدنا فقدان تماسك",
+    tierPledgeCta: "تعهَّد عبر الموقع",
     message: "الرسالة",
     messagePh: "أخبرنا كيف تودّ التشابك مع المختبر…",
     privacy: "مشفَّرة أثناء النقل · تُخزَّن في قاعدة بيانات مختبرنا فقط",

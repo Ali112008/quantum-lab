@@ -1,0 +1,598 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import Image from "next/image";
+     5→import { useForm } from "react-hook-form";
+     6→import { zodResolver } from "@hookform/resolvers/zod";
+     7→import { z } from "zod";
+     8→import { motion, AnimatePresence } from "framer-motion";
+     9→import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Rocket } from "lucide-react";
+    10→import SectionHeading from "@/components/ui/SectionHeading";
+    11→import QuantumCard from "@/components/ui/QuantumCard";
+    12→import Counter from "@/components/ui/Counter";
+    13→import { Button } from "@/components/ui/button";
+    14→import { Input } from "@/components/ui/input";
+    15→import { Label } from "@/components/ui/label";
+    16→import { Textarea } from "@/components/ui/textarea";
+    17→import { useToast } from "@/hooks/use-toast";
+    18→import {
+    19→  Select,
+    20→  SelectContent,
+    21→  SelectItem,
+    22→  SelectTrigger,
+    23→  SelectValue,
+    24→} from "@/components/ui/select";
+    25→import { quantumVariants, viewport } from "@/lib/animations";
+    26→import { useLang } from "@/lib/LanguageProvider";
+    27→import { FUNDRAISING, LAB_EMAIL } from "@/lib/data";
+    28→
+    29→/**
+    30→ * SECTION 08 — MAKE CONTACT
+    31→ * A fullstack form: signals POST to /api/inquiries (Prisma + SQLite),
+    32→ * and a live counter shows how many "measurements" have collapsed so far.
+    33→ * Validation messages re-bind per language — the schema is rebuilt on toggle.
+    34→ */
+    35→
+    36→function SignalCounter() {
+    37→  const [total, setTotal] = useState<number | null>(null);
+    38→  const { t } = useLang();
+    39→
+    40→  useEffect(() => {
+    41→    let cancelled = false;
+    42→    fetch("/api/inquiries")
+    43→      .then((r) => r.json())
+    44→      .then((data: { ok: boolean; total?: number }) => {
+    45→        if (!cancelled && data.ok && typeof data.total === "number") {
+    46→          setTotal(data.total);
+    47→        }
+    48→      })
+    49→      .catch(() => {
+    50→        /* the counter stays in superposition */
+    51→      });
+    52→    return () => {
+    53→      cancelled = true;
+    54→    };
+    55→  }, []);
+    56→
+    57→  return (
+    58→    <div className="flex items-center justify-center gap-2.5 rounded-full border border-quantum-green/30 bg-quantum-green/10 px-5 py-2.5 mb-10 w-fit mx-auto">
+    59→      <motion.span
+    60→        animate={{ opacity: [1, 0.35, 1] }}
+    61→        transition={{ duration: 1.6, repeat: Infinity }}
+    62→        className="relative flex size-2.5"
+    63→      >
+    64→        <span className="absolute inline-flex size-full animate-ping rounded-full bg-quantum-green opacity-60" />
+    65→        <span className="relative inline-flex size-2.5 rounded-full bg-quantum-green" />
+    66→      </motion.span>
+    67→      <span className="font-mono text-xs tracking-wider text-quantum-green">
+    68→        {total === null ? t.contact.counterScanning : t.contact.counter(total)}
+    69→      </span>
+    70→    </div>
+    71→  );
+    72→}
+    73→
+    74→export default function ContactSection() {
+    75→  const { toast } = useToast();
+    76→  const { t, lang } = useLang();
+    77→  const [submitted, setSubmitted] = useState(false);
+    78→
+    79→  // Schema rebuilt per language so validation errors speak the page language.
+    80→  const formSchema = useMemo(
+    81→    () =>
+    82→      z.object({
+    83→        name: z.string().trim().min(2, t.contact.zodName).max(80),
+    84→        org: z.string().trim().max(120).optional().or(z.literal("")),
+    85→        email: z.string().trim().email(t.contact.zodEmail),
+    86→        interest: z.enum(["funding", "partnership", "join", "other"]),
+    87→        message: z
+    88→          .string()
+    89→          .trim()
+    90→          .min(10, t.contact.zodMessage)
+    91→          .max(2000),
+    92→        /** Honeypot — hidden from humans; must stay empty. */
+    93→        website: z.string().max(0).optional().or(z.literal("")),
+    94→      }),
+    95→    [t]
+    96→  );
+    97→
+    98→  type FormValues = z.infer<typeof formSchema>;
+    99→
+   100→  const {
+   101→    register,
+   102→    handleSubmit,
+   103→    reset,
+   104→    setValue,
+   105→    watch,
+   106→    formState: { errors, isSubmitting },
+   107→  } = useForm<FormValues>({
+   108→    resolver: zodResolver(formSchema),
+   109→    defaultValues: {
+   110→      name: "",
+   111→      org: "",
+   112→      email: "",
+   113→      interest: "funding",
+   114→      message: "",
+   115→      website: "",
+   116→    },
+   117→  });
+   118→
+   119→  const interest = watch("interest");
+   120→
+   121→  const onSubmit = async (values: FormValues) => {
+   122→    try {
+   123→      const res = await fetch("/api/inquiries", {
+   124→        method: "POST",
+   125→        headers: { "Content-Type": "application/json" },
+   126→        body: JSON.stringify(values),
+   127→      });
+   128→      const data: { ok: boolean; error?: string } = await res.json();
+   129→
+   130→      if (!res.ok || !data.ok) {
+   131→        // Server messages are English — localize the common rate-limit case.
+   132→        throw new Error(
+   133→          res.status === 429 ? t.contact.rateLimited : data.error ?? t.contact.toastErrorDesc
+   134→        );
+   135→      }
+   136→
+   137→      setSubmitted(true);
+   138→      reset();
+   139→      toast({
+   140→        title: t.contact.toastTitle,
+   141→        description: t.contact.toastDesc,
+   142→      });
+   143→    } catch (err) {
+   144→      toast({
+   145→        title: t.contact.toastErrorTitle,
+   146→        description: err instanceof Error ? err.message : t.contact.toastErrorDesc,
+   147→        variant: "destructive",
+   148→      });
+   149→    }
+   150→  };
+   151→
+   152→  return (
+   153→    <section id="contact" className="relative py-24 md:py-32" aria-label={t.misc.contactAria}>
+   154→      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-quantum-blue/30 to-transparent" />
+   155→
+   156→      <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+   157→        <SectionHeading
+   158→          eyebrow={t.contact.eyebrow}
+   159→          title={t.contact.title}
+   160→          subtitle={t.contact.subtitle}
+   161→        />
+   162→
+   163→        <SignalCounter />
+   164→
+   165→        {/* ══ ROAD TO $50,000 — live seed-round progress ══
+   166→            A glowing funding tube: honest numbers only (FUNDRAISING in
+   167→            data.ts). Milestone ticks are log-decade spaced so the $500 →
+   168→            $5K → $50K jumps read as equal steps. Money scale pinned LTR. */}
+   169→        <motion.div
+   170→          variants={quantumVariants}
+   171→          initial="hidden"
+   172→          whileInView="visible"
+   173→          viewport={viewport}
+   174→          className="relative mb-10 overflow-hidden rounded-2xl border border-quantum-amber/25 bg-gradient-to-b from-quantum-amber/[0.07] to-quantum-secondary/60 p-5 md:p-6"
+   175→          role="group"
+   176→          aria-label={t.contact.fundAria}
+   177→        >
+   178→          {/* decorative corner glows */}
+   179→          <span aria-hidden="true" className="pointer-events-none absolute -top-14 -start-14 size-36 rounded-full bg-quantum-amber/10 blur-3xl" />
+   180→          <span aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-10 size-40 rounded-full bg-quantum-purple/10 blur-3xl" />
+   181→
+   182→          <div className="relative flex flex-wrap items-center justify-between gap-3">
+   183→            <div>
+   184→              <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-quantum-amber">
+   185→                <Rocket className="size-3.5" aria-hidden="true" />
+   186→                {t.contact.fundEyebrow}
+   187→              </p>
+   188→              <h3 className="mt-1.5 font-heading text-lg font-extrabold text-white md:text-xl">
+   189→                {t.contact.fundTitle}
+   190→              </h3>
+   191→            </div>
+   192→            <span className="inline-flex items-center gap-1.5 rounded-full border border-quantum-green/40 bg-quantum-green/10 px-3 py-1 font-mono text-[10px] font-bold tracking-[0.18em] text-quantum-green">
+   193→              <motion.span
+   194→                animate={{ opacity: [1, 0.3, 1] }}
+   195→                transition={{ duration: 1.8, repeat: Infinity }}
+   196→                className="size-1.5 rounded-full bg-quantum-green"
+   197→                aria-hidden="true"
+   198→              />
+   199→              {t.contact.fundGoalChip}
+   200→            </span>
+   201→          </div>
+   202→
+   203→          <p className="relative mt-2 max-w-xl text-xs leading-relaxed text-quantum-subtle md:text-sm">
+   204→            {t.contact.fundSub}
+   205→          </p>
+   206→
+   207→          {/* raised / goal readout */}
+   208→          <div className="relative mt-5 flex flex-wrap items-end gap-x-4 gap-y-1">
+   209→            <p className="font-heading text-3xl font-black text-white tabular-nums" dir="ltr">
+   210→              <Counter value={FUNDRAISING.raised} prefix="$" className="text-quantum-amber" />
+   211→            </p>
+   212→            <p className="pb-0.5 text-xs text-quantum-subtle">
+   213→              {t.contact.fundRaisedLabel}
+   214→              <span className="mx-2 text-quantum-subtle/40">·</span>
+   215→              <span className="font-mono text-quantum-amber/90" dir="ltr">
+   216→                {t.contact.fundPctLabel(
+   217→                  Math.round((FUNDRAISING.raised / FUNDRAISING.goal) * 100)
+   218→                )}
+   219→              </span>
+   220→            </p>
+   221→            <p className="ms-auto pb-0.5 font-mono text-[11px] text-quantum-subtle/80" dir="ltr">
+   222→              GOAL $50,000
+   223→            </p>
+   224→          </div>
+   225→
+   226→          {/* the tube */}
+   227→          <div
+   228→            className="relative mt-3 h-3.5 rounded-full bg-quantum-navy/90 ring-1 ring-inset ring-white/10"
+   229→            dir="ltr"
+   230→            aria-hidden="true"
+   231→          >
+   232→            {/* current fill — grows as pledges land */}
+   233→            <motion.div
+   234→              className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-quantum-amber via-[#FFE29A] to-quantum-amber shadow-[0_0_18px_rgba(251,191,36,0.55)]"
+   235→              initial={{ width: 0 }}
+   236→              whileInView={{ width: `${(FUNDRAISING.raised / FUNDRAISING.goal) * 100}%` }}
+   237→              viewport={{ once: true }}
+   238→              transition={{ duration: 1.2, ease: "easeOut" }}
+   239→            />
+   240→            {/* shimmer sweep — the tube is "live" even at zero */}
+   241→            <motion.span
+   242→              aria-hidden="true"
+   243→              className="absolute inset-y-0 w-16 rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+   244→              animate={{ x: ["-80px", "420px"] }}
+   245→              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
+   246→            />
+   247→            {/* milestone ticks */}
+   248→            {FUNDRAISING.milestones.map((m) => (
+   249→              <span
+   250→                key={m}
+   251→                className="absolute top-1/2 h-5 w-px -translate-y-1/2 bg-white/40"
+   252→                style={{ left: `${m * 100}%` }}
+   253→              />
+   254→            ))}
+   255→            {/* YOU-ARE-HERE node at zero */}
+   256→            <span className="absolute top-1/2 start-0 -translate-y-1/2">
+   257→              <span className="relative flex size-3.5">
+   258→                <span className="absolute inline-flex size-full animate-ping rounded-full bg-quantum-amber opacity-60" />
+   259→                <span className="relative inline-flex size-3.5 rounded-full border-2 border-quantum-navy bg-quantum-amber shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
+   260→              </span>
+   261→            </span>
+   262→          </div>
+   263→
+   264→          {/* milestone legend — absolute at the exact tick positions,
+   265→              edge labels anchored inward so nothing overflows */}
+   266→          <div className="relative mt-3 h-10 font-mono text-[9px] tracking-wider text-quantum-subtle md:text-[10px]" dir="ltr">
+   267→            {t.contact.fundMilestones.map((ms, i) => {
+   268→              const pos = FUNDRAISING.milestones[i] * 100;
+   269→              const anchor =
+   270→                i === 0
+   271→                  ? { left: 0 }
+   272→                  : i === t.contact.fundMilestones.length - 1
+   273→                    ? { right: 0 }
+   274→                    : { left: `${pos}%`, transform: "translateX(-50%)" };
+   275→              return (
+   276→                <span
+   277→                  key={ms.at}
+   278→                  className="absolute top-0 flex flex-col items-center whitespace-nowrap"
+   279→                  style={anchor}
+   280→                >
+   281→                  <span className="font-bold text-quantum-text/80">{ms.at}</span>
+   282→                  <span>{ms.label}</span>
+   283→                </span>
+   284→              );
+   285→            })}
+   286→          </div>
+   287→
+   288→          <p className="relative mt-4 text-center font-heading text-xs font-bold text-quantum-amber/90 md:text-sm">
+   289→            {t.contact.fundEmpty}
+   290→          </p>
+   291→        </motion.div>
+   292→
+   293→        {/* ══ SPONSORSHIP TIERS — pick your entanglement level ══
+   294→            Three on-ramps into the ask: a single qubit, a gate, or the
+   295→            whole register. The featured tier mirrors the full $50K ask. */}
+   296→        <motion.div
+   297→          variants={quantumVariants}
+   298→          initial="hidden"
+   299→          whileInView="visible"
+   300→          viewport={viewport}
+   301→          className="mb-10"
+   302→          role="group"
+   303→          aria-label={t.contact.tiersAria}
+   304→        >
+   305→          <p className="mb-5 flex items-center justify-center gap-2 text-center font-mono text-[11px] tracking-[0.3em] text-quantum-amber">
+   306→            <Gem className="size-3.5" aria-hidden="true" />
+   307→            {t.contact.tiersEyebrow}
+   308→          </p>
+   309→          <div className="grid gap-4 md:grid-cols-3">
+   310→            {t.contact.tiers.map((tier, i) => (
+   311→              <motion.div
+   312→                key={tier.name}
+   313→                initial={{ opacity: 0, y: 24 }}
+   314→                whileInView={{ opacity: 1, y: 0 }}
+   315→                viewport={{ once: true, margin: "-60px" }}
+   316→                transition={{ delay: i * 0.12, type: "spring", stiffness: 140, damping: 18 }}
+   317→                whileHover={{ y: -6 }}
+   318→                className={`relative flex flex-col rounded-2xl border p-5 backdrop-blur-sm transition-shadow duration-300 ${
+   319→                  tier.featured
+   320→                    ? "border-quantum-amber/50 bg-gradient-to-b from-quantum-amber/[0.10] to-quantum-secondary/70 shadow-[0_0_36px_-8px_rgba(251,191,36,0.35)]"
+   321→                    : "border-white/10 bg-quantum-secondary/60 hover:border-quantum-blue/40"
+   322→                }`}
+   323→              >
+   324→                {tier.featured && (
+   325→                  <span className="absolute -top-2.5 end-4 inline-flex items-center gap-1 rounded-full border border-quantum-amber/60 bg-quantum-navy px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.18em] text-quantum-amber shadow-[0_0_12px_rgba(251,191,36,0.4)]">
+   326→                    <Sparkles className="size-3" aria-hidden="true" />
+   327→                    {t.contact.tiersFeaturedBadge}
+   328→                  </span>
+   329→                )}
+   330→                <p className="font-mono text-2xl font-black tracking-tight text-white" dir="ltr">
+   331→                  {tier.amount}
+   332→                </p>
+   333→                <h3 className={`mt-1 font-heading text-sm font-bold ${tier.featured ? "text-quantum-amber" : "text-quantum-blue"}`}>
+   334→                  {tier.name}
+   335→                </h3>
+   336→                <p className="mt-1.5 min-h-10 text-xs leading-relaxed text-quantum-subtle">
+   337→                  {tier.tagline}
+   338→                </p>
+   339→                <ul className="mt-3 flex-1 space-y-1.5">
+   340→                  {tier.perks.map((perk) => (
+   341→                    <li key={perk} className="flex items-start gap-1.5 text-[11px] leading-snug text-quantum-text/85">
+   342→                      <Check className="mt-0.5 size-3 shrink-0 text-quantum-green" aria-hidden="true" />
+   343→                      {perk}
+   344→                    </li>
+   345→                  ))}
+   346→                </ul>
+   347→                <a
+   348→                  href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
+   349→                    `Sponsorship — ${tier.name} (${tier.amount})`
+   350→                  )}`}
+   351→                  className={`mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border font-heading text-xs font-bold transition-all ${
+   352→                    tier.featured
+   353→                      ? "border-quantum-amber/60 bg-quantum-amber/15 text-quantum-amber hover:bg-quantum-amber/25 hover:shadow-[0_0_22px_rgba(251,191,36,0.4)]"
+   354→                      : "border-quantum-blue/40 bg-quantum-blue/5 text-quantum-blue hover:bg-quantum-blue/15 hover:shadow-[0_0_16px_rgba(0,217,255,0.3)]"
+   355→                  }`}
+   356→                >
+   357→                  <Send className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
+   358→                  {t.contact.tiersCta}
+   359→                </a>
+   360→              </motion.div>
+   361→            ))}
+   362→          </div>
+   363→          <p className="mt-4 text-center text-[11px] text-quantum-subtle/80">{t.contact.tiersNote}</p>
+   364→        </motion.div>
+   365→
+   366→        {/* ══ SCAN-TO-EMAIL — a print-safe bridge: the QR encodes a mailto:
+   367→            so it works on paper, posters and projectors, forever. ══ */}
+   368→        <motion.div
+   369→          variants={quantumVariants}
+   370→          initial="hidden"
+   371→          whileInView="visible"
+   372→          viewport={viewport}
+   373→          className="mx-auto mb-10 flex w-fit items-center gap-4 rounded-2xl border border-white/10 bg-quantum-secondary/60 p-4"
+   374→        >
+   375→          <div className="relative shrink-0 rounded-xl bg-white p-1.5 shadow-[0_0_18px_rgba(0,217,255,0.25)]">
+   376→            <Image
+   377→              src="/images/qr-lab-email.png"
+   378→              alt={t.contact.qrTitle}
+   379→              width={72}
+   380→              height={72}
+   381→              className="size-18"
+   382→            />
+   383→            <span aria-hidden="true" className="absolute inset-0 rounded-xl ring-1 ring-quantum-blue/40" />
+   384→          </div>
+   385→          <div className="max-w-52">
+   386→            <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.22em] text-quantum-blue">
+   387→              <QrCode className="size-3.5" aria-hidden="true" />
+   388→              {t.contact.qrTitle}
+   389→            </p>
+   390→            <p className="mt-1 text-[11px] leading-relaxed text-quantum-subtle">{t.contact.qrCaption}</p>
+   391→          </div>
+   392→        </motion.div>
+   393→
+   394→        <motion.div
+   395→          variants={quantumVariants}
+   396→          initial="hidden"
+   397→          whileInView="visible"
+   398→          viewport={viewport}
+   399→        >
+   400→          <QuantumCard accent="#00D9FF" className="p-6 md:p-10">
+   401→            <AnimatePresence mode="wait">
+   402→              {submitted ? (
+   403→                <motion.div
+   404→                  key="success"
+   405→                  initial={{ opacity: 0, scale: 0.9 }}
+   406→                  animate={{ opacity: 1, scale: 1 }}
+   407→                  exit={{ opacity: 0 }}
+   408→                  className="flex flex-col items-center text-center py-10"
+   409→                >
+   410→                  <motion.span
+   411→                    initial={{ scale: 0, rotate: -180 }}
+   412→                    animate={{ scale: 1, rotate: 0 }}
+   413→                    transition={{ type: "spring", stiffness: 200, damping: 14 }}
+   414→                    className="mb-5 flex size-20 items-center justify-center rounded-full bg-quantum-green/15 border border-quantum-green/40"
+   415→                  >
+   416→                    <CheckCircle2 className="size-10 text-quantum-green" aria-hidden="true" />
+   417→                  </motion.span>
+   418→                  <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-white">
+   419→                    {t.contact.successTitle}
+   420→                  </h3>
+   421→                  <p className="mt-3 max-w-md text-quantum-subtle">
+   422→                    {t.contact.successBody}
+   423→                  </p>
+   424→                  <Button
+   425→                    type="button"
+   426→                    onClick={() => setSubmitted(false)}
+   427→                    variant="outline"
+   428→                    className="mt-7 border-quantum-blue/50 bg-transparent text-quantum-blue hover:bg-quantum-blue/10 hover:text-quantum-blue"
+   429→                  >
+   430→                    {t.contact.successBtn}
+   431→                  </Button>
+   432→                </motion.div>
+   433→              ) : (
+   434→                <motion.form
+   435→                  key="form"
+   436→                  initial={{ opacity: 0 }}
+   437→                  animate={{ opacity: 1 }}
+   438→                  exit={{ opacity: 0, scale: 0.98 }}
+   439→                  onSubmit={handleSubmit(onSubmit)}
+   440→                  noValidate
+   441→                  className="grid gap-5 md:grid-cols-2"
+   442→                  aria-label={t.contact.subtitle}
+   443→                >
+   444→                  {/* Name */}
+   445→                  <div className="space-y-2">
+   446→                    <Label htmlFor="name" className="text-quantum-text">
+   447→                      {t.contact.name} <span className="text-quantum-red">*</span>
+   448→                    </Label>
+   449→                    <Input
+   450→                      id="name"
+   451→                      placeholder={t.contact.namePh}
+   452→                      aria-invalid={!!errors.name}
+   453→                      className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
+   454→                      {...register("name")}
+   455→                    />
+   456→                    {errors.name && (
+   457→                      <p className="text-xs text-quantum-red">{errors.name.message}</p>
+   458→                    )}
+   459→                  </div>
+   460→
+   461→                  {/* Email */}
+   462→                  <div className="space-y-2">
+   463→                    <Label htmlFor="email" className="text-quantum-text">
+   464→                      {t.contact.email} <span className="text-quantum-red">*</span>
+   465→                    </Label>
+   466→                    <Input
+   467→                      id="email"
+   468→                      type="email"
+   469→                      dir="ltr"
+   470→                      placeholder={t.contact.emailPh}
+   471→                      aria-invalid={!!errors.email}
+   472→                      className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
+   473→                      {...register("email")}
+   474→                    />
+   475→                    {errors.email && (
+   476→                      <p className="text-xs text-quantum-red">{errors.email.message}</p>
+   477→                    )}
+   478→                  </div>
+   479→
+   480→                  {/* Organization */}
+   481→                  <div className="space-y-2">
+   482→                    <Label htmlFor="org" className="text-quantum-text">
+   483→                      {t.contact.org}{" "}
+   484→                      <span className="text-quantum-subtle text-xs">{t.contact.orgOptional}</span>
+   485→                    </Label>
+   486→                    <Input
+   487→                      id="org"
+   488→                      placeholder={t.contact.orgPh}
+   489→                      className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
+   490→                      {...register("org")}
+   491→                    />
+   492→                  </div>
+   493→
+   494→                  {/* Interest */}
+   495→                  <div className="space-y-2">
+   496→                    <Label htmlFor="interest" className="text-quantum-text">
+   497→                      {t.contact.interest}
+   498→                    </Label>
+   499→                    <input type="hidden" {...register("interest")} />
+   500→                    <Select
+   501→                      value={interest}
+   502→                      onValueChange={(v) =>
+   503→                        setValue("interest", v as FormValues["interest"], {
+   504→                          shouldValidate: true,
+   505→                        })
+   506→                      }
+   507→                    >
+   508→                      <SelectTrigger
+   509→                        id="interest"
+   510→                        className="w-full bg-quantum-navy/60 border-white/10 data-[placeholder]:text-quantum-subtle"
+   511→                      >
+   512→                        <SelectValue placeholder={t.contact.interestPh} />
+   513→                      </SelectTrigger>
+   514→                      <SelectContent className="bg-quantum-secondary border-quantum-blue/20">
+   515→                        {t.contact.interestOptions.map((opt) => (
+   516→                          <SelectItem key={opt.value} value={opt.value}>
+   517→                            {opt.label}
+   518→                          </SelectItem>
+   519→                        ))}
+   520→                      </SelectContent>
+   521→                    </Select>
+   522→                  </div>
+   523→
+   524→                  {/* Message */}
+   525→                  <div className="space-y-2 md:col-span-2">
+   526→                    <Label htmlFor="message" className="text-quantum-text">
+   527→                      {t.contact.message} <span className="text-quantum-red">*</span>
+   528→                    </Label>
+   529→                    <Textarea
+   530→                      id="message"
+   531→                      rows={5}
+   532→                      placeholder={t.contact.messagePh}
+   533→                      aria-invalid={!!errors.message}
+   534→                      className="resize-none bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
+   535→                      {...register("message")}
+   536→                    />
+   537→                    <div className="flex items-center justify-between">
+   538→                      {errors.message ? (
+   539→                        <p className="text-xs text-quantum-red">
+   540→                          {errors.message.message}
+   541→                        </p>
+   542→                      ) : (
+   543→                        <p className="text-xs text-quantum-subtle flex items-center gap-1.5">
+   544→                          <Radio className="size-3" aria-hidden="true" />
+   545→                          {t.contact.privacy}
+   546→                        </p>
+   547→                      )}
+   548→                      <span className="font-mono text-[10px] text-quantum-subtle tabular-nums">
+   549→                        {watch("message")?.length ?? 0}/2000
+   550→                      </span>
+   551→                    </div>
+   552→                  </div>
+   553→
+   554→                  <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+   555→                    {/* Honeypot: invisible to humans & screen readers.
+   556→                        Bots that fill it are silently dropped. */}
+   557→                    <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+   558→                      <label htmlFor="website">{t.contact.honeypotLabel}</label>
+   559→                      <input
+   560→                        id="website"
+   561→                        type="text"
+   562→                        tabIndex={-1}
+   563→                        autoComplete="off"
+   564→                        {...register("website")}
+   565→                      />
+   566→                    </div>
+   567→                    <p className="font-mono text-[11px] text-quantum-subtle flex items-center gap-2">
+   568→                      <Activity className="size-3.5 text-quantum-green" aria-hidden="true" />
+   569→                      {t.contact.responseTime}
+   570→                    </p>
+   571→                    <Button
+   572→                      type="submit"
+   573→                      disabled={isSubmitting}
+   574→                      className="w-full sm:w-auto h-12 rounded-xl bg-quantum-blue px-8 font-heading font-bold text-quantum-navy hover:bg-[#33e1ff] hover:shadow-[0_0_28px_rgba(0,217,255,0.5)] disabled:opacity-60"
+   575→                    >
+   576→                      {isSubmitting ? (
+   577→                        <>
+   578→                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+   579→                          {t.contact.submitting}
+   580→                        </>
+   581→                      ) : (
+   582→                        <>
+   583→                          <Send className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+   584→                          {t.contact.submit}
+   585→                        </>
+   586→                      )}
+   587→                    </Button>
+   588→                  </div>
+   589→                </motion.form>
+   590→              )}
+   591→            </AnimatePresence>
+   592→          </QuantumCard>
+   593→        </motion.div>
+   594→      </div>
+   595→    </section>
+   596→  );
+   597→}
+   598→

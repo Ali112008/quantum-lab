@@ -6,10 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Rocket } from "lucide-react";
+import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Coins } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
-import Counter from "@/components/ui/Counter";
+import FundingTube, { PledgePrefill } from "@/components/ui/FundingTube";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { quantumVariants, viewport } from "@/lib/animations";
 import { useLang } from "@/lib/LanguageProvider";
-import { FUNDRAISING, LAB_EMAIL } from "@/lib/data";
+import { LAB_EMAIL } from "@/lib/data";
 
 /**
  * SECTION 08 — MAKE CONTACT
@@ -75,6 +75,20 @@ export default function ContactSection() {
   const { toast } = useToast();
   const { t, lang } = useLang();
   const [submitted, setSubmitted] = useState(false);
+
+  /** Tier cards can prefill the pledge-intent form inside <FundingTube/>:
+      a new object identity per click makes the tube's prefill effect fire. */
+  const [pledgePrefill, setPledgePrefill] = useState<PledgePrefill | null>(null);
+  const handleTierPledge = (index: number) => {
+    const amounts = [500, 5000, 50_000]; // mirrors the tier ladder
+    const keys = ["qubit", "gate", "founding"];
+    setPledgePrefill({ amount: amounts[index], tier: keys[index], nonce: Date.now() });
+    requestAnimationFrame(() => {
+      document
+        .getElementById("funding-tube")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
 
   // Schema rebuilt per language so validation errors speak the page language.
   const formSchema = useMemo(
@@ -162,133 +176,11 @@ export default function ContactSection() {
 
         <SignalCounter />
 
-        {/* ══ ROAD TO $50,000 — live seed-round progress ══
-            A glowing funding tube: honest numbers only (FUNDRAISING in
-            data.ts). Milestone ticks are log-decade spaced so the $500 →
-            $5K → $50K jumps read as equal steps. Money scale pinned LTR. */}
-        <motion.div
-          variants={quantumVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          className="relative mb-10 overflow-hidden rounded-2xl border border-quantum-amber/25 bg-gradient-to-b from-quantum-amber/[0.07] to-quantum-secondary/60 p-5 md:p-6"
-          role="group"
-          aria-label={t.contact.fundAria}
-        >
-          {/* decorative corner glows */}
-          <span aria-hidden="true" className="pointer-events-none absolute -top-14 -start-14 size-36 rounded-full bg-quantum-amber/10 blur-3xl" />
-          <span aria-hidden="true" className="pointer-events-none absolute -bottom-16 -end-10 size-40 rounded-full bg-quantum-purple/10 blur-3xl" />
-
-          <div className="relative flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-quantum-amber">
-                <Rocket className="size-3.5" aria-hidden="true" />
-                {t.contact.fundEyebrow}
-              </p>
-              <h3 className="mt-1.5 font-heading text-lg font-extrabold text-white md:text-xl">
-                {t.contact.fundTitle}
-              </h3>
-            </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-quantum-green/40 bg-quantum-green/10 px-3 py-1 font-mono text-[10px] font-bold tracking-[0.18em] text-quantum-green">
-              <motion.span
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ duration: 1.8, repeat: Infinity }}
-                className="size-1.5 rounded-full bg-quantum-green"
-                aria-hidden="true"
-              />
-              {t.contact.fundGoalChip}
-            </span>
-          </div>
-
-          <p className="relative mt-2 max-w-xl text-xs leading-relaxed text-quantum-subtle md:text-sm">
-            {t.contact.fundSub}
-          </p>
-
-          {/* raised / goal readout */}
-          <div className="relative mt-5 flex flex-wrap items-end gap-x-4 gap-y-1">
-            <p className="font-heading text-3xl font-black text-white tabular-nums" dir="ltr">
-              <Counter value={FUNDRAISING.raised} prefix="$" className="text-quantum-amber" />
-            </p>
-            <p className="pb-0.5 text-xs text-quantum-subtle">
-              {t.contact.fundRaisedLabel}
-              <span className="mx-2 text-quantum-subtle/40">·</span>
-              <span className="font-mono text-quantum-amber/90" dir="ltr">
-                {t.contact.fundPctLabel(
-                  Math.round((FUNDRAISING.raised / FUNDRAISING.goal) * 100)
-                )}
-              </span>
-            </p>
-            <p className="ms-auto pb-0.5 font-mono text-[11px] text-quantum-subtle/80" dir="ltr">
-              GOAL $50,000
-            </p>
-          </div>
-
-          {/* the tube */}
-          <div
-            className="relative mt-3 h-3.5 rounded-full bg-quantum-navy/90 ring-1 ring-inset ring-white/10"
-            dir="ltr"
-            aria-hidden="true"
-          >
-            {/* current fill — grows as pledges land */}
-            <motion.div
-              className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-quantum-amber via-[#FFE29A] to-quantum-amber shadow-[0_0_18px_rgba(251,191,36,0.55)]"
-              initial={{ width: 0 }}
-              whileInView={{ width: `${(FUNDRAISING.raised / FUNDRAISING.goal) * 100}%` }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-            />
-            {/* shimmer sweep — the tube is "live" even at zero */}
-            <motion.span
-              aria-hidden="true"
-              className="absolute inset-y-0 w-16 rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
-              animate={{ x: ["-80px", "420px"] }}
-              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
-            />
-            {/* milestone ticks */}
-            {FUNDRAISING.milestones.map((m) => (
-              <span
-                key={m}
-                className="absolute top-1/2 h-5 w-px -translate-y-1/2 bg-white/40"
-                style={{ left: `${m * 100}%` }}
-              />
-            ))}
-            {/* YOU-ARE-HERE node at zero */}
-            <span className="absolute top-1/2 start-0 -translate-y-1/2">
-              <span className="relative flex size-3.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-quantum-amber opacity-60" />
-                <span className="relative inline-flex size-3.5 rounded-full border-2 border-quantum-navy bg-quantum-amber shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-              </span>
-            </span>
-          </div>
-
-          {/* milestone legend — absolute at the exact tick positions,
-              edge labels anchored inward so nothing overflows */}
-          <div className="relative mt-3 h-10 font-mono text-[9px] tracking-wider text-quantum-subtle md:text-[10px]" dir="ltr">
-            {t.contact.fundMilestones.map((ms, i) => {
-              const pos = FUNDRAISING.milestones[i] * 100;
-              const anchor =
-                i === 0
-                  ? { left: 0 }
-                  : i === t.contact.fundMilestones.length - 1
-                    ? { right: 0 }
-                    : { left: `${pos}%`, transform: "translateX(-50%)" };
-              return (
-                <span
-                  key={ms.at}
-                  className="absolute top-0 flex flex-col items-center whitespace-nowrap"
-                  style={anchor}
-                >
-                  <span className="font-bold text-quantum-text/80">{ms.at}</span>
-                  <span>{ms.label}</span>
-                </span>
-              );
-            })}
-          </div>
-
-          <p className="relative mt-4 text-center font-heading text-xs font-bold text-quantum-amber/90 md:text-sm">
-            {t.contact.fundEmpty}
-          </p>
-        </motion.div>
+        {/* ══ ROAD TO $50,000 — LIVE seed-round progress (Prisma-backed) ══
+            FundingTube fetches /api/pledges: only human-CONFIRMED pledges
+            move the tube. It also hosts the donor wall and the pledge
+            intent form; tier cards below can prefill it. */}
+        <FundingTube prefill={pledgePrefill} />
 
         {/* ══ SPONSORSHIP TIERS — pick your entanglement level ══
             Three on-ramps into the ask: a single qubit, a gate, or the
@@ -344,19 +236,30 @@ export default function ContactSection() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
-                    `Sponsorship — ${tier.name} (${tier.amount})`
-                  )}`}
-                  className={`mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border font-heading text-xs font-bold transition-all ${
-                    tier.featured
-                      ? "border-quantum-amber/60 bg-quantum-amber/15 text-quantum-amber hover:bg-quantum-amber/25 hover:shadow-[0_0_22px_rgba(251,191,36,0.4)]"
-                      : "border-quantum-blue/40 bg-quantum-blue/5 text-quantum-blue hover:bg-quantum-blue/15 hover:shadow-[0_0_16px_rgba(0,217,255,0.3)]"
-                  }`}
-                >
-                  <Send className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
-                  {t.contact.tiersCta}
-                </a>
+                <div className="mt-4 grid gap-2">
+                  <a
+                    href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
+                      `Sponsorship — ${tier.name} (${tier.amount})`
+                    )}`}
+                    className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border font-heading text-xs font-bold transition-all ${
+                      tier.featured
+                        ? "border-quantum-amber/60 bg-quantum-amber/15 text-quantum-amber hover:bg-quantum-amber/25 hover:shadow-[0_0_22px_rgba(251,191,36,0.4)]"
+                        : "border-quantum-blue/40 bg-quantum-blue/5 text-quantum-blue hover:bg-quantum-blue/15 hover:shadow-[0_0_16px_rgba(0,217,255,0.3)]"
+                    }`}
+                  >
+                    <Send className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
+                    {t.contact.tiersCta}
+                  </a>
+                  {/* zero-friction on-ramp: prefill the pledge-intent form */}
+                  <button
+                    type="button"
+                    onClick={() => handleTierPledge(i)}
+                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 font-mono text-[11px] tracking-wide text-quantum-subtle transition-all hover:border-quantum-amber/40 hover:text-quantum-amber"
+                  >
+                    <Coins className="size-3" aria-hidden="true" />
+                    {t.contact.tierPledgeCta}
+                  </button>
+                </div>
               </motion.div>
             ))}
           </div>

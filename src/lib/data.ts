@@ -482,7 +482,12 @@ export const TOTAL_SEED = 50000;
  */
 export const FUNDRAISING = {
   goal: TOTAL_SEED,
+  /** FALLBACK ONLY — the live tube reads /api/pledges (Prisma-backed).
+      This value shows while loading or if the API is unreachable.
+      HONESTY RULE: never raise this by hand; confirm a Pledge row instead. */
   raised: 0,
+  /** Quick-pick chips in the pledge intent form — mirror the tier ladder. */
+  suggestedAmounts: [500, 1000, 5000] as const,
   /** Milestones on the tube — positions are log-decade spaced so the
       $500 → $5,000 → $50,000 steps sit at equal visual intervals. */
   milestones: [0.18, 0.5, 1] as const,

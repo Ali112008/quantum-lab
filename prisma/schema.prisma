@@ -44,3 +44,23 @@ model Subscriber {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+/// A pledge intent on the Road-to-$50K funding tube.
+///
+/// HONESTY RULE (see FUNDRAISING in src/lib/data.ts): the public tube only
+/// ever counts CONFIRMED money. A visitor's submission lands as PENDING —
+/// it becomes visible on the donor wall and in the total only after a real
+/// human verifies it (email / call / signed letter) via the admin API.
+/// This is the database-level enforcement of "raised only updates after
+/// confirmed pledges".
+model Pledge {
+  id          String    @id @default(cuid())
+  name        String // display name (masked to initials in public responses)
+  email       String // private — used by the team to confirm the pledge
+  amount      Int // USD, integer dollars
+  tier        String    @default("custom") // qubit | gate | founding | custom
+  message     String? // optional note for the lab (never shown publicly)
+  status      String    @default("PENDING") // PENDING | CONFIRMED | DECLINED
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+}

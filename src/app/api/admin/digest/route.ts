@@ -85,7 +85,7 @@ export async function GET(req: Request) {
     }
 
     // ---- Authenticated: ship the full inbox ----
-    const [inquiryTotal, inquiries, subscriberTotal, subscribers] =
+    const [inquiryTotal, inquiries, subscriberTotal, subscribers, pledgePending, pledgeConfirmed, pledgeSum] =
       await Promise.all([
         db.inquiry.count(),
         db.inquiry.findMany({
@@ -98,6 +98,18 @@ export async function GET(req: Request) {
           take: 100,
           select: { id: true, email: true, createdAt: true },
         }),
+        // Pledges: pending intents need action; confirmed ones are money in the tube.
+        db.pledge.findMany({
+          where: { status: "PENDING" },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        }),
+        db.pledge.findMany({
+          where: { status: "CONFIRMED" },
+          orderBy: { confirmedAt: "desc" },
+          take: 100,
+        }),
+        db.pledge.aggregate({ where: { status: "CONFIRMED" }, _sum: { amount: true } }),
       ]);
 
     return NextResponse.json(
@@ -106,6 +118,10 @@ export async function GET(req: Request) {
         generatedAt: new Date().toISOString(),
         inquiries: { total: inquiryTotal, items: inquiries },
         subscribers: { total: subscriberTotal, items: subscribers },
+        pledges: {
+          pending: { items: pledgePending },
+          confirmed: { items: pledgeConfirmed, totalUSD: pledgeSum._sum.amount ?? 0 },
+        },
       },
       { headers: { "Cache-Control": "no-store" } }
     );
