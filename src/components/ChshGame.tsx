@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Dices,
+  Flame,
   GraduationCap,
   Link2,
+  Medal,
   RotateCcw,
   Swords,
   Target,
@@ -26,6 +28,17 @@ import {
   sampleChsh,
   type TwoQubitState,
 } from "@/lib/quantum";
+import {
+  MIN_ROUNDS_FOR_WINRATE,
+  NO_FRESH,
+  SERVER_RECORDS,
+  commitRecords,
+  foldRound,
+  getRecordsSnapshot,
+  persistCoachPreference,
+  subscribeRecords,
+  type FreshRecords,
+} from "@/lib/chshRecords";
 /**
  * THE CHSH GAME — Bell's inequality played live, inside SECTION 04.
  *
@@ -150,6 +163,19 @@ export default function ChshGame() {
   const [wins, setWins] = useState(0);
   const [violated, setViolated] = useState(false);
 
+  /**
+   * Lifetime Hall of Fame — read straight from localStorage via an external
+   * store: hydration-safe (server snapshot = defaults), cross-tab aware,
+   * and no setState-in-effect anywhere.
+   */
+  const records = useSyncExternalStore(
+    subscribeRecords,
+    getRecordsSnapshot,
+    () => SERVER_RECORDS
+  );
+  const [fresh, setFresh] = useState<FreshRecords>(NO_FRESH);
+  const [streak, setStreak] = useState(0);
+
   const target: 0 | 1 | null = x !== null && y !== null ? ((x & y) as 0 | 1) : null;
 
   /** Aggregate stats. */
@@ -175,6 +201,7 @@ export default function ChshGame() {
     setPhiA(null);
     setPhiB(null);
     setOutcome(null);
+    setFresh(NO_FRESH); // the NEW! flash belongs to the round that set it
     setRound((r) => r + 1);
     setPhase("choosing");
   }, []);
@@ -195,23 +222,54 @@ export default function ChshGame() {
         : s
     );
 
-    // One celebration, ever — crossing |S| > 2 with real sampling stats
-    // (every setting pair played at least SIGNIFICANCE times).
-    if (!violated && nextTally.every((s) => s.n >= SIGNIFICANCE)) {
-      const E = nextTally.map((s) => (s.same - s.diff) / s.n);
-      if (E[0] + E[1] + E[2] - E[3] > CHSH_CLASSICAL_S) setViolated(true);
-    }
+    /**
+     * S for the *next* tally — only statistically meaningful once every
+     * setting pair has ≥ SIGNIFICANCE samples (same bar as the violation).
+     */
+    const significant = nextTally.every((s) => s.n >= SIGNIFICANCE);
+    const nextS: number | null = significant
+      ? nextTally.reduce(
+          (acc, s, i) =>
+            i === 3 ? acc - (s.same - s.diff) / s.n : acc + (s.same - s.diff) / s.n,
+          0
+        )
+      : null;
+    const violatesNow = !violated && nextS !== null && nextS > CHSH_CLASSICAL_S;
+    if (violatesNow) setViolated(true);
+
+    // Lifetime Hall of Fame — fold this round into the persisted records.
+    const totalAfter = totalRounds + 1;
+    const winsAfter = wins + (win ? 1 : 0);
+    const streakAfter = win ? streak + 1 : 0;
+    const { next: nextRecords, fresh: freshRecords } = foldRound(records, {
+      significantS: nextS,
+      winRatePct:
+        totalAfter >= MIN_ROUNDS_FOR_WINRATE ? (winsAfter / totalAfter) * 100 : null,
+      rounds: totalAfter,
+      streak: streakAfter,
+      violatedNow: violatesNow,
+    });
 
     setOutcome({ a, b, win });
     setTally(nextTally);
     setWins((w) => (win ? w + 1 : w));
     setHistory((h) => [...h.slice(-(HISTORY_DOTS - 1)), win]);
+    setStreak(streakAfter);
+    commitRecords(nextRecords); // persists + notifies the subscribed store
+    setFresh(freshRecords);
     setPhase("result");
-  }, [x, y, phiA, phiB, tally, violated]);
+  }, [x, y, phiA, phiB, tally, violated, streak, records, totalRounds, wins]);
 
   const nextRound = useCallback(() => {
     setPhase("ready");
     setOutcome(null);
+  }, []);
+
+  const toggleCoach = useCallback(() => {
+    setCoach((c2) => {
+      persistCoachPreference(!c2); // remember the preference across visits
+      return !c2;
+    });
   }, []);
 
   const resetStats = useCallback(() => {
@@ -262,7 +320,7 @@ export default function ChshGame() {
         {/* coach toggle */}
         <button
           type="button"
-          onClick={() => setCoach((c2) => !c2)}
+          onClick={toggleCoach}
           aria-pressed={coach}
           className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] transition-all ${
             coach
@@ -643,6 +701,109 @@ export default function ChshGame() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* ══ Hall of Fame — lifetime records, persisted in localStorage ══ */}
+          <div
+            role="group"
+            aria-label={ch.recordsAria}
+            className="relative rounded-xl border border-[#FFD166]/20 bg-quantum-secondary/50 p-4"
+          >
+            <p className="mb-3 flex items-center gap-1.5 font-mono text-[10px] tracking-[0.25em] text-[#FFD166]/90">
+              <Medal className="h-3.5 w-3.5" aria-hidden="true" />
+              {ch.recordsTitle}
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-center" dir="ltr">
+              {(
+                [
+                  {
+                    key: "bestS" as const,
+                    label: ch.recBestS,
+                    value: records.bestS === null ? "—" : records.bestS.toFixed(3),
+                    hint: ch.recBestSHint,
+                    valueClass: records.bestS !== null && records.bestS > CHSH_CLASSICAL_S ? "text-[#00B894]" : "text-white",
+                    isFresh: fresh.bestS,
+                  },
+                  {
+                    key: "winRate" as const,
+                    label: ch.recBestWinRate,
+                    value:
+                      records.bestWinRatePct === null
+                        ? "—"
+                        : `${records.bestWinRatePct.toFixed(1)}%`,
+                    hint: undefined,
+                    valueClass: "text-white",
+                    isFresh: fresh.bestWinRate,
+                  },
+                  {
+                    key: "streak" as const,
+                    label: ch.recBestStreak,
+                    value: String(records.bestStreak),
+                    hint: undefined,
+                    valueClass: "text-[#FFD166]",
+                    isFresh: fresh.bestStreak,
+                  },
+                  {
+                    key: "total" as const,
+                    label: ch.recTotalRounds,
+                    value: String(records.totalRoundsEver),
+                    hint: undefined,
+                    valueClass: "text-white",
+                    isFresh: false,
+                  },
+                ] as const
+              ).map((tile) => (
+                <div
+                  key={tile.key}
+                  title={tile.hint}
+                  className={`relative rounded-lg bg-quantum-navy/70 p-2 transition-shadow duration-500 ${
+                    tile.isFresh ? "ring-2 ring-[#FFD166]/70 shadow-[0_0_18px_rgba(255,209,102,0.35)]" : ""
+                  }`}
+                >
+                  <p className="font-mono text-[9px] tracking-widest text-quantum-subtle">
+                    {tile.label}
+                  </p>
+                  <motion.p
+                    key={`${tile.key}-${tile.value}`}
+                    initial={tile.isFresh ? { scale: 1.35, color: GOLD } : false}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 16 }}
+                    className={`font-mono text-xl font-black ${tile.valueClass}`}
+                  >
+                    {tile.value}
+                  </motion.p>
+                  {tile.isFresh && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 14 }}
+                      className="absolute -top-2 end-1.5 rounded-full border border-[#FFD166]/70 bg-quantum-navy px-1.5 py-px font-mono text-[8px] font-bold tracking-wider text-[#FFD166] shadow-[0_0_10px_rgba(255,209,102,0.45)]"
+                    >
+                      {ch.recNewBadge}
+                    </motion.span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* current streak + Nobel club status */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {streak >= 2 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[#00B894]/40 bg-[#00B894]/10 px-2 py-0.5 font-mono text-[10px] font-bold text-[#00B894]" dir="ltr">
+                  <Flame className="h-3 w-3 animate-pulse" aria-hidden="true" />
+                  {streak} {ch.streakNowLabel}
+                </span>
+              )}
+              {records.violationEver && (
+                <span
+                  title={ch.recNobelNote}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#FFD166]/50 bg-[#FFD166]/10 px-2 py-0.5 font-mono text-[10px] font-bold text-[#FFD166]"
+                >
+                  <Trophy className="h-3 w-3" aria-hidden="true" />
+                  {ch.recNobelBadge}
+                </span>
+              )}
+            </div>
+            <p className="mt-2 text-[9px] italic text-quantum-subtle/60">{ch.recLifetimeNote}</p>
           </div>
 
           {/* Bell violation celebration */}

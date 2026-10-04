@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
+import QuantumAvatar from "@/components/ui/QuantumAvatar";
 import { TEAM_MEMBERS, LAB_EMAIL, type TeamGroup } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { staggerContainer, scaleIn, quantumVariants, viewport } from "@/lib/animations";
@@ -111,12 +112,16 @@ export default function Team() {
                     : "border-white/8 hover:border-quantum-blue/40"
                 }`}
               >
-                {/* avatar halo */}
+                {/* avatar halo — seeded quantum pattern + initials on top */}
                 <div
                   className={`relative mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} p-[2px] transition-shadow duration-300 group-hover:shadow-[0_0_24px_rgba(0,217,255,0.45)]`}
                 >
-                  <span className="flex size-full items-center justify-center rounded-full bg-quantum-navy font-mono text-sm font-bold text-white">
-                    {initials(member.name)}
+                  <span className="relative flex size-full items-center justify-center overflow-hidden rounded-full bg-quantum-navy">
+                    {/* deterministic micro-universe — same name, same pattern */}
+                    <QuantumAvatar name={member.name} gradient={member.gradient} />
+                    <span className="relative z-10 rounded-full bg-quantum-navy/55 px-1 font-mono text-sm font-bold text-white">
+                      {initials(member.name)}
+                    </span>
                   </span>
                   {member.open && (
                     <span

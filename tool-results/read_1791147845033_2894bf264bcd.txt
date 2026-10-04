@@ -1,0 +1,691 @@
+     1→"use client";
+     2→
+     3→import { useCallback, useMemo, useState } from "react";
+     4→import { AnimatePresence, motion } from "framer-motion";
+     5→import {
+     6→  Dices,
+     7→  GraduationCap,
+     8→  Link2,
+     9→  RotateCcw,
+    10→  Swords,
+    11→  Target,
+    12→  Trophy,
+    13→} from "lucide-react";
+    14→import QuantumCard from "@/components/ui/QuantumCard";
+    15→import { Button } from "@/components/ui/button";
+    16→import { useLang } from "@/lib/LanguageProvider";
+    17→import { quantumVariants, viewport } from "@/lib/animations";
+    18→import {
+    19→  CHSH_CLASSICAL_S,
+    20→  CHSH_CLASSICAL_WIN,
+    21→  CHSH_QUANTUM_S,
+    22→  CHSH_QUANTUM_WIN,
+    23→  c,
+    24→  chshPhiA,
+    25→  chshPhiB,
+    26→  sampleChsh,
+    27→  type TwoQubitState,
+    28→} from "@/lib/quantum";
+    29→/**
+    30→ * THE CHSH GAME — Bell's inequality played live, inside SECTION 04.
+    31→ *
+    32→ * The loophole-free heart of the pitch. Alice and Bob share one Bell pair
+    33→ * per round and may NOT communicate. A referee hands Alice a random bit x
+    34→ * and Bob a random bit y; each must output a bit. The pair wins the round
+    35→ * IFF a ⊕ b = x·y.
+    36→ *
+    37→ *   · any classical strategy (even with shared randomness) wins ≤ 75%
+    38→ *   · measuring the shared Φ⁺ in rotated bases wins cos²(π/8) ≈ 85.36%
+    39→ *   · the CHSH statistic S built from all four setting pairs obeys
+    40→ *     |S| ≤ 2 classically but reaches 2√2 ≈ 2.83 quantumly (Tsirelson).
+    41→ *
+    42→ * The coach toggle suggests the optimal basis per station:
+    43→ *   φA = x·π/4      (Z axis, or halfway to X)
+    44→ *   φB = π/8 − y·π/4 (the famous ±22.5° half-angle split)
+    45→ *
+    46→ * Physics honesty: the engine (src/lib/quantum.ts) computes the full
+    47→ * Born rule over rotated bases — verified against cos(2Δφ) analytically
+    48→ * and against a 20k-round Monte-Carlo before shipping. The shared pair
+    49→ * is a fresh Φ⁺ every round, exactly like a Bell-test photon source.
+    50→ *
+    51→ * RTL note: all angles, bits and S values are pinned dir="ltr"; only
+    52→ * surrounding chrome flips.
+    53→ */
+    54→
+    55→const GOLD = "#FFD166"; // the game's accent — referee yellow
+    56→const WIN_GREEN = "#00B894";
+    57→const LOSS_RED = "#FF6B6B";
+    58→const ENTANGLED_COLOR = "#FF6B9D";
+    59→const HISTORY_DOTS = 14; // recent rounds shown in the dot strip
+    60→const SIGNIFICANCE = 8; // samples per setting before S is "real"
+    61→
+    62→/** Per-setting tally: one of the four (x,y) combinations. */
+    63→interface SettingTally {
+    64→  same: number;
+    65→  diff: number;
+    66→  n: number;
+    67→}
+    68→
+    69→const EMPTY_TALLY = (): SettingTally[] =>
+    70→  Array.from({ length: 4 }, () => ({ same: 0, diff: 0, n: 0 }));
+    71→
+    72→/** The shared resource — one fresh Bell pair per round. */
+    73→const BELL_PHI_PLUS: TwoQubitState = {
+    74→  amps: [c(Math.SQRT1_2), c(0), c(0), c(Math.SQRT1_2)],
+    75→};
+    76→
+    77→type Phase = "ready" | "choosing" | "result";
+    78→
+    79→interface Outcome {
+    80→  a: 0 | 1;
+    81→  b: 0 | 1;
+    82→  win: boolean;
+    83→}
+    84→
+    85→/* ------------------------------------------------------------------ */
+    86→/*                        Basis dial (mini SVG)                        */
+    87→/* ------------------------------------------------------------------ */
+    88→
+    89→/**
+    90→ * A tiny measurement dial: the needle shows which axis in the X–Z plane
+    91→ * this station will project onto. Z points up; 45° tilts halfway to X.
+    92→ * The angle is PHYSICAL — 22.5° is literally the number that breaks Bell.
+    93→ */
+    94→function BasisDial({ phi, accent }: { phi: number; accent: string }) {
+    95→  const SIZE = 56;
+    96→  const C = SIZE / 2;
+    97→  const R = 21;
+    98→  const deg = (phi * 180) / Math.PI;
+    99→  return (
+   100→    <svg
+   101→      width={SIZE}
+   102→      height={SIZE}
+   103→      viewBox={`0 0 ${SIZE} ${SIZE}`}
+   104→      aria-hidden="true"
+   105→      dir="ltr"
+   106→      className="shrink-0"
+   107→    >
+   108→      <circle cx={C} cy={C} r={R} fill="rgba(10,25,47,0.7)" stroke="rgba(136,146,176,0.35)" strokeWidth="1.2" />
+   109→      {/* Z axis tick (0°) and X axis tick (90°) — the reference frame */}
+   110→      <line x1={C} y1={C - R + 1} x2={C} y2={C - R + 6} stroke="#8892B0" strokeWidth="1.5" strokeLinecap="round" />
+   111→      <line x1={C + R - 1} y1={C} x2={C + R - 6} y2={C} stroke="#8892B0" strokeWidth="1.5" strokeLinecap="round" />
+   112→      {/* the needle, rotated to φ */}
+   113→      <g transform={`rotate(${deg} ${C} ${C})`}>
+   114→        <motion.line
+   115→          x1={C}
+   116→          y1={C}
+   117→          x2={C}
+   118→          y2={C - R + 3}
+   119→          stroke={accent}
+   120→          strokeWidth="2.5"
+   121→          strokeLinecap="round"
+   122→          initial={false}
+   123→          animate={{ opacity: 1 }}
+   124→        />
+   125→        <circle cx={C} cy={C - R + 3} r="3.2" fill={accent} />
+   126→      </g>
+   127→      <circle cx={C} cy={C} r="2" fill="#8892B0" />
+   128→    </svg>
+   129→  );
+   130→}
+   131→
+   132→/* ------------------------------------------------------------------ */
+   133→/*                             The game                                */
+   134→/* ------------------------------------------------------------------ */
+   135→
+   136→export default function ChshGame() {
+   137→  const { t } = useLang();
+   138→  const ch = t.chsh;
+   139→
+   140→  const [phase, setPhase] = useState<Phase>("ready");
+   141→  const [round, setRound] = useState(0);
+   142→  const [x, setX] = useState<0 | 1 | null>(null);
+   143→  const [y, setY] = useState<0 | 1 | null>(null);
+   144→  const [phiA, setPhiA] = useState<number | null>(null);
+   145→  const [phiB, setPhiB] = useState<number | null>(null);
+   146→  const [outcome, setOutcome] = useState<Outcome | null>(null);
+   147→  const [coach, setCoach] = useState(true);
+   148→  const [tally, setTally] = useState<SettingTally[]>(EMPTY_TALLY);
+   149→  const [history, setHistory] = useState<boolean[]>([]);
+   150→  const [wins, setWins] = useState(0);
+   151→  const [violated, setViolated] = useState(false);
+   152→
+   153→  const target: 0 | 1 | null = x !== null && y !== null ? ((x & y) as 0 | 1) : null;
+   154→
+   155→  /** Aggregate stats. */
+   156→  const totalRounds = tally.reduce((acc, s) => acc + s.n, 0);
+   157→  const winRate = totalRounds > 0 ? wins / totalRounds : 0;
+   158→
+   159→  /**
+   160→   * The CHSH statistic S = E(0,0) + E(0,1) + E(1,0) − E(1,1), where
+   161→   * E = P(same) − P(diff) per setting pair. Estimable only after all
+   162→   * four (x,y) combinations have been played.
+   163→   */
+   164→  const S = useMemo<number | null>(() => {
+   165→    if (tally.some((s) => s.n === 0)) return null;
+   166→    const E = tally.map((s) => (s.same - s.diff) / s.n);
+   167→    return E[0] + E[1] + E[2] - E[3];
+   168→  }, [tally]);
+   169→
+   170→  /* --------------------------- game flow --------------------------- */
+   171→
+   172→  const deal = useCallback(() => {
+   173→    setX(Math.random() < 0.5 ? 0 : 1);
+   174→    setY(Math.random() < 0.5 ? 0 : 1);
+   175→    setPhiA(null);
+   176→    setPhiB(null);
+   177→    setOutcome(null);
+   178→    setRound((r) => r + 1);
+   179→    setPhase("choosing");
+   180→  }, []);
+   181→
+   182→  const measure = useCallback(() => {
+   183→    if (x === null || y === null || phiA === null || phiB === null) return;
+   184→    const { a, b } = sampleChsh(BELL_PHI_PLUS, phiA, phiB);
+   185→    const t2: 0 | 1 = (x & y) as 0 | 1;
+   186→    const win = (a ^ b) === t2;
+   187→    const idx = x * 2 + y;
+   188→
+   189→    // Fold this round into the per-setting tally.
+   190→    const nextTally: SettingTally[] = tally.map((s, i) =>
+   191→      i === idx
+   192→        ? a === b
+   193→          ? { ...s, same: s.same + 1, n: s.n + 1 }
+   194→          : { ...s, diff: s.diff + 1, n: s.n + 1 }
+   195→        : s
+   196→    );
+   197→
+   198→    // One celebration, ever — crossing |S| > 2 with real sampling stats
+   199→    // (every setting pair played at least SIGNIFICANCE times).
+   200→    if (!violated && nextTally.every((s) => s.n >= SIGNIFICANCE)) {
+   201→      const E = nextTally.map((s) => (s.same - s.diff) / s.n);
+   202→      if (E[0] + E[1] + E[2] - E[3] > CHSH_CLASSICAL_S) setViolated(true);
+   203→    }
+   204→
+   205→    setOutcome({ a, b, win });
+   206→    setTally(nextTally);
+   207→    setWins((w) => (win ? w + 1 : w));
+   208→    setHistory((h) => [...h.slice(-(HISTORY_DOTS - 1)), win]);
+   209→    setPhase("result");
+   210→  }, [x, y, phiA, phiB, tally, violated]);
+   211→
+   212→  const nextRound = useCallback(() => {
+   213→    setPhase("ready");
+   214→    setOutcome(null);
+   215→  }, []);
+   216→
+   217→  const resetStats = useCallback(() => {
+   218→    setTally(EMPTY_TALLY());
+   219→    setHistory([]);
+   220→    setWins(0);
+   221→    setRound(0);
+   222→    setPhase("ready");
+   223→    setX(null);
+   224→    setY(null);
+   225→    setPhiA(null);
+   226→    setPhiB(null);
+   227→    setOutcome(null);
+   228→    setViolated(false);
+   229→  }, []);
+   230→
+   231→  /* --------------------------- render ------------------------------ */
+   232→
+   233→  const stationLocked = phase !== "choosing";
+   234→  const optimalA: 0 | 1 = x === 0 ? 0 : 1;
+   235→  const optimalB: 0 | 1 = y === 0 ? 0 : 1;
+   236→
+   237→  // Basis geometry lives in the engine (quantum.ts) — the UI only renders it.
+   238→  const basisA = [
+   239→    { id: 0 as const, phi: chshPhiA(0), label: ch.basisA0, blurb: ch.basisBlurbA0, accent: "#00D9FF" },
+   240→    { id: 1 as const, phi: chshPhiA(1), label: ch.basisA1, blurb: ch.basisBlurbA1, accent: "#00D9FF" },
+   241→  ];
+   242→  const basisB = [
+   243→    { id: 0 as const, phi: chshPhiB(0), label: ch.basisB0, blurb: ch.basisBlurbB0, accent: "#6C5CE7" },
+   244→    { id: 1 as const, phi: chshPhiB(1), label: ch.basisB1, blurb: ch.basisBlurbB1, accent: "#6C5CE7" },
+   245→  ];
+   246→
+   247→  const winPct = winRate * 100;
+   248→  const sClamp = S !== null ? Math.min(Math.max(S, 0), CHSH_QUANTUM_S) : 0;
+   249→  const sBeat = S !== null && S > CHSH_CLASSICAL_S;
+   250→
+   251→  return (
+   252→    <QuantumCard accent={GOLD} noReveal className="p-6 md:p-8">
+   253→      {/* header */}
+   254→      <div className="flex flex-wrap items-center justify-between gap-3">
+   255→        <h3 className="flex items-center gap-2 font-heading text-sm font-bold text-white">
+   256→          <Swords className="h-4 w-4" style={{ color: GOLD }} />
+   257→          {ch.title}
+   258→          <span className="font-mono text-[10px] tracking-[0.25em] text-quantum-subtle" dir="ltr">
+   259→            a ⊕ b = x·y
+   260→          </span>
+   261→        </h3>
+   262→        {/* coach toggle */}
+   263→        <button
+   264→          type="button"
+   265→          onClick={() => setCoach((c2) => !c2)}
+   266→          aria-pressed={coach}
+   267→          className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] transition-all ${
+   268→            coach
+   269→              ? "border-[#FFD166]/60 bg-[#FFD166]/10 text-[#FFD166] shadow-[0_0_14px_rgba(255,209,102,0.25)]"
+   270→              : "border-white/10 bg-quantum-secondary/60 text-quantum-subtle hover:border-[#FFD166]/40 hover:text-white"
+   271→          }`}
+   272→        >
+   273→          <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
+   274→          {ch.coachLabel} {coach ? "ON" : "OFF"}
+   275→        </button>
+   276→      </div>
+   277→      <p className="mt-2 max-w-3xl text-xs leading-relaxed text-quantum-subtle md:text-sm">
+   278→        {ch.subtitle}
+   279→      </p>
+   280→
+   281→      <div className="mt-6 grid gap-6 lg:grid-cols-[1.55fr_1fr]">
+   282→        {/* ══════════════ LEFT: the duel ══════════════ */}
+   283→        <div className="flex flex-col gap-5">
+   284→          {/* challenge zone
+   285→              NOTE: no AnimatePresence mode="wait" here — rapid phase flips
+   286→              (a user speed-running the game) can orphan a pending enter and
+   287→              freeze the zone with no button at all. Plain conditional render
+   288→              keeps enter animations while making a stall impossible. */}
+   289→          <div className="relative min-h-[132px] overflow-hidden rounded-xl border border-[#FFD166]/15 bg-quantum-navy/60 p-4">
+   290→            {phase === "ready" ? (
+   291→                <motion.div
+   292→                  key="ready"
+   293→                  initial={{ opacity: 0 }}
+   294→                  animate={{ opacity: 1 }}
+   295→                  className="flex h-[100px] flex-col items-center justify-center gap-3 text-center"
+   296→                >
+   297→                  <Target className="h-5 w-5 text-[#FFD166]/70" aria-hidden="true" />
+   298→                  <Button
+   299→                    type="button"
+   300→                    onClick={deal}
+   301→                    className="min-h-11 bg-[#FFD166] font-heading text-quantum-navy shadow-[0_0_20px_rgba(255,209,102,0.3)] hover:bg-[#FFD166]/85 hover:shadow-[0_0_30px_rgba(255,209,102,0.5)]"
+   302→                  >
+   303→                    <Dices className="me-1.5 h-4 w-4" />
+   304→                    {ch.dealBtn}
+   305→                  </Button>
+   306→                </motion.div>
+   307→            ) : (
+   308→                <motion.div
+   309→                  key={`round-${round}`}
+   310→                  initial={{ opacity: 0 }}
+   311→                  animate={{ opacity: 1 }}
+   312→                >
+   313→                  <p className="mb-3 font-mono text-[10px] tracking-[0.25em] text-[#FFD166]/80">
+   314→                    {ch.roundN(round)}
+   315→                  </p>
+   316→                  <div className="grid grid-cols-2 gap-3" dir="ltr">
+   317→                    {/* Alice's question card */}
+   318→                    <motion.div
+   319→                      initial={{ opacity: 0, y: 14, rotateX: -30 }}
+   320→                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+   321→                      transition={{ type: "spring", stiffness: 220, damping: 18 }}
+   322→                      className="rounded-lg border border-[#00D9FF]/30 bg-[#00D9FF]/[0.06] p-3"
+   323→                    >
+   324→                      <p className="font-mono text-[9px] tracking-[0.2em] text-[#00D9FF]/80">
+   325→                        ALICE · x
+   326→                      </p>
+   327→                      <p className="font-mono text-3xl font-black text-white">{x}</p>
+   328→                    </motion.div>
+   329→                    {/* Bob's question card */}
+   330→                    <motion.div
+   331→                      initial={{ opacity: 0, y: 14, rotateX: -30 }}
+   332→                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+   333→                      transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.08 }}
+   334→                      className="rounded-lg border border-[#6C5CE7]/30 bg-[#6C5CE7]/[0.06] p-3"
+   335→                    >
+   336→                      <p className="font-mono text-[9px] tracking-[0.2em] text-[#6C5CE7]/80">
+   337→                        BOB · y
+   338→                      </p>
+   339→                      <p className="font-mono text-3xl font-black text-white">{y}</p>
+   340→                    </motion.div>
+   341→                  </div>
+   342→                  {/* the target */}
+   343→                  {target !== null && (
+   344→                    <motion.p
+   345→                      initial={{ opacity: 0, y: 6 }}
+   346→                      animate={{ opacity: 1, y: 0 }}
+   347→                      transition={{ delay: 0.15 }}
+   348→                      className="mt-3 rounded-lg border border-[#FFD166]/30 bg-[#FFD166]/[0.07] px-3 py-1.5 text-center font-mono text-[11px] font-bold text-[#FFD166]"
+   349→                    >
+   350→                      {target === 0 ? ch.targetSame : ch.targetDiff}
+   351→                    </motion.p>
+   352→                  )}
+   353→                </motion.div>
+   354→            )}
+   355→          </div>
+   356→
+   357→          {/* the two stations */}
+   358→          <div className="grid gap-3 sm:grid-cols-2">
+   359→            {([
+   360→              { who: ch.aliceStation, basis: basisA, sel: phiA, set: setPhiA, opt: optimalA, q: x === null ? null : ch.questionAlice(x as 0 | 1) },
+   361→              { who: ch.bobStation, basis: basisB, sel: phiB, set: setPhiB, opt: optimalB, q: y === null ? null : ch.questionBob(y as 0 | 1) },
+   362→            ] as const).map((station) => (
+   363→              <div
+   364→                key={station.who}
+   365→                role="radiogroup"
+   366→                aria-label={ch.stationAria(station.who)}
+   367→                className="rounded-xl border border-white/8 bg-quantum-secondary/50 p-3"
+   368→              >
+   369→                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] text-quantum-subtle">
+   370→                  {station.who}
+   371→                </p>
+   372→                <div className="grid grid-cols-2 gap-2">
+   373→                  {station.basis.map((b) => {
+   374→                    const selected = station.sel === b.phi;
+   375→                    const isCoachPick = coach && !stationLocked && station.opt === b.id;
+   376→                    return (
+   377→                      <button
+   378→                        key={b.id}
+   379→                        type="button"
+   380→                        role="radio"
+   381→                        aria-checked={selected}
+   382→                        disabled={stationLocked}
+   383→                        onClick={() => station.set(b.phi)}
+   384→                        title={b.blurb}
+   385→                        className={`relative flex min-h-11 items-center gap-2 rounded-lg border p-2 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
+   386→                          selected
+   387→                            ? "border-[#FFD166]/70 bg-[#FFD166]/10 shadow-[0_0_16px_rgba(255,209,102,0.3)]"
+   388→                            : "border-white/10 bg-quantum-navy/70 hover:border-white/25"
+   389→                        } ${isCoachPick && !selected ? "animate-pulse-glow border-[#FFD166]/50" : ""}`}
+   390→                      >
+   391→                        <BasisDial phi={b.phi} accent={b.accent} />
+   392→                        <span className="font-mono text-xs font-bold text-white" dir="ltr">
+   393→                          {b.label}
+   394→                        </span>
+   395→                        {isCoachPick && (
+   396→                          <span className="absolute -top-2 end-1.5 rounded-full border border-[#FFD166]/60 bg-quantum-navy px-1.5 py-px font-mono text-[8px] tracking-wider text-[#FFD166]">
+   397→                            {ch.coachPick}
+   398→                          </span>
+   399→                        )}
+   400→                      </button>
+   401→                    );
+   402→                  })}
+   403→                </div>
+   404→                {station.q && (
+   405→                  <p className="mt-2 text-[10px] leading-relaxed text-quantum-subtle/80">
+   406→                    {station.q}
+   407→                  </p>
+   408→                )}
+   409→              </div>
+   410→            ))}
+   411→          </div>
+   412→
+   413→          {/* actions + result */}
+   414→          <div className="mt-auto flex flex-wrap items-center gap-2">
+   415→            {phase === "choosing" && (
+   416→              <Button
+   417→                type="button"
+   418→                onClick={measure}
+   419→                disabled={phiA === null || phiB === null}
+   420→                className="min-h-11 flex-1 bg-quantum-blue font-heading text-quantum-navy shadow-[0_0_20px_rgba(0,217,255,0.25)] hover:bg-quantum-blue/85 sm:flex-none"
+   421→              >
+   422→                <Dices className="me-1.5 h-4 w-4" />
+   423→                {ch.measureBtn}
+   424→              </Button>
+   425→            )}
+   426→            {phase === "result" && (
+   427→              <Button
+   428→                type="button"
+   429→                onClick={nextRound}
+   430→                className="min-h-11 flex-1 bg-[#FFD166] font-heading text-quantum-navy shadow-[0_0_20px_rgba(255,209,102,0.3)] hover:bg-[#FFD166]/85 sm:flex-none"
+   431→              >
+   432→                <Swords className="me-1.5 h-4 w-4" />
+   433→                {ch.nextBtn}
+   434→              </Button>
+   435→            )}
+   436→            {phase === "ready" && totalRounds === 0 && (
+   437→              <span className="text-xs text-quantum-subtle/70">{ch.coachHintOn}</span>
+   438→            )}
+   439→            <Button
+   440→              type="button"
+   441→              onClick={resetStats}
+   442→              variant="ghost"
+   443→              aria-label={ch.resetAria}
+   444→              className="min-h-11 ms-auto font-heading text-quantum-subtle hover:bg-white/5 hover:text-white"
+   445→            >
+   446→              <RotateCcw className="me-1.5 h-4 w-4" />
+   447→              {ch.resetBtn}
+   448→            </Button>
+   449→          </div>
+   450→
+   451→          {/* round result banner */}
+   452→          <AnimatePresence>
+   453→            {phase === "result" && outcome && target !== null && (
+   454→              <motion.div
+   455→                key={`result-${round}`}
+   456→                initial={{ opacity: 0, y: 10, scale: 0.97 }}
+   457→                animate={{ opacity: 1, y: 0, scale: 1 }}
+   458→                exit={{ opacity: 0, y: -8 }}
+   459→                transition={{ type: "spring", stiffness: 220, damping: 20 }}
+   460→                role="status"
+   461→                className="rounded-xl border p-4"
+   462→                style={{
+   463→                  borderColor: outcome.win ? `${WIN_GREEN}55` : `${LOSS_RED}55`,
+   464→                  background: outcome.win ? `${WIN_GREEN}12` : `${LOSS_RED}12`,
+   465→                }}
+   466→              >
+   467→                <div className="flex flex-wrap items-center justify-between gap-3">
+   468→                  <p
+   469→                    className="font-heading text-sm font-black tracking-wide"
+   470→                    style={{ color: outcome.win ? WIN_GREEN : LOSS_RED }}
+   471→                  >
+   472→                    {outcome.win ? "★ " : "✕ "}
+   473→                    {outcome.win ? ch.winBanner : ch.lossBanner}
+   474→                  </p>
+   475→                  <div className="flex items-center gap-2 font-mono text-xs" dir="ltr">
+   476→                    {[
+   477→                      { k: "a", v: outcome.a, c: "#00D9FF" },
+   478→                      { k: "b", v: outcome.b, c: "#6C5CE7" },
+   479→                      { k: "a⊕b", v: outcome.a ^ outcome.b, c: "#FFFFFF" },
+   480→                      { k: "x·y", v: target, c: "#FFD166" },
+   481→                    ].map((chip) => (
+   482→                      <span
+   483→                        key={chip.k}
+   484→                        className="flex items-center gap-1 rounded-md border border-white/10 bg-quantum-navy/80 px-2 py-1"
+   485→                      >
+   486→                        <span className="text-[9px] text-quantum-subtle">{chip.k}</span>
+   487→                        <span className="font-bold" style={{ color: chip.c }}>
+   488→                          {chip.v}
+   489→                        </span>
+   490→                      </span>
+   491→                    ))}
+   492→                  </div>
+   493→                </div>
+   494→                <p className="mt-2 text-[11px] text-quantum-subtle">
+   495→                  <span dir="ltr">
+   496→                    {ch.winDetail(outcome.a, outcome.b, target)}
+   497→                  </span>
+   498→                </p>
+   499→              </motion.div>
+   500→            )}
+   501→          </AnimatePresence>
+   502→        </div>
+   503→
+   504→        {/* ══════════════ RIGHT: shared pair + scoreboard ══════════════ */}
+   505→        <div className="flex flex-col gap-4">
+   506→          {/* shared pair chip */}
+   507→          <div className="rounded-xl border border-[#FF6B9D]/25 bg-[#FF6B9D]/[0.05] p-3">
+   508→            <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-[#FF6B9D]">
+   509→              <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+   510→              {ch.sharedTitle}
+   511→              <span className="ms-auto flex items-center gap-1" aria-hidden="true">
+   512→                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#FF6B9D] shadow-[0_0_6px_#FF6B9D]" />
+   513→                <span className="font-mono text-xs text-white" dir="ltr">Φ⁺</span>
+   514→                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#FF6B9D] shadow-[0_0_6px_#FF6B9D]" />
+   515→              </span>
+   516→            </p>
+   517→            <p className="mt-1.5 text-[10px] text-quantum-subtle">{ch.sharedNote}</p>
+   518→          </div>
+   519→
+   520→          {/* scoreboard */}
+   521→          <div className="rounded-xl border border-white/8 bg-quantum-secondary/50 p-4">
+   522→            <p className="mb-3 font-mono text-[10px] tracking-[0.25em] text-quantum-subtle">
+   523→              {ch.statsTitle}
+   524→            </p>
+   525→            <div className="grid grid-cols-2 gap-2 text-center" dir="ltr">
+   526→              <div className="rounded-lg bg-quantum-navy/70 p-2">
+   527→                <p className="font-mono text-[9px] tracking-widest text-quantum-subtle">{ch.roundsLabel}</p>
+   528→                <p className="font-mono text-xl font-black text-white">{totalRounds}</p>
+   529→              </div>
+   530→              <div className="rounded-lg bg-quantum-navy/70 p-2">
+   531→                <p className="font-mono text-[9px] tracking-widest text-quantum-subtle">{ch.winsLabel}</p>
+   532→                <p className="font-mono text-xl font-black" style={{ color: WIN_GREEN }}>{wins}</p>
+   533→              </div>
+   534→            </div>
+   535→
+   536→            {/* win-rate bar vs the two ceilings */}
+   537→            <div className="mt-4" role="img" aria-label={ch.winRateAria(Math.round(winPct))}>
+   538→              <div className="mb-1 flex items-center justify-between">
+   539→                <span className="font-mono text-[9px] tracking-[0.2em] text-quantum-subtle">
+   540→                  {ch.winRateLabel}
+   541→                </span>
+   542→                <span className="font-mono text-sm text-white" dir="ltr">
+   543→                  {winPct.toFixed(1)}%
+   544→                </span>
+   545→              </div>
+   546→              <div className="relative h-3 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   547→                <motion.div
+   548→                  className="h-full rounded-full"
+   549→                  style={{
+   550→                    background: `linear-gradient(90deg, #00D9FF, ${WIN_GREEN})`,
+   551→                    boxShadow: `0 0 12px ${WIN_GREEN}55`,
+   552→                  }}
+   553→                  animate={{ width: `${winPct}%` }}
+   554→                  transition={{ type: "spring", stiffness: 90, damping: 18 }}
+   555→                />
+   556→                {/* classical ceiling 75% */}
+   557→                <span
+   558→                  aria-hidden="true"
+   559→                  className="absolute inset-y-0 w-px bg-white/60"
+   560→                  style={{ left: `${CHSH_CLASSICAL_WIN * 100}%` }}
+   561→                />
+   562→                {/* quantum optimum 85.4% */}
+   563→                <span
+   564→                  aria-hidden="true"
+   565→                  className="absolute inset-y-0 w-px bg-[#FFD166]"
+   566→                  style={{ left: `${CHSH_QUANTUM_WIN * 100}%`, boxShadow: `0 0 6px ${GOLD}` }}
+   567→                />
+   568→              </div>
+   569→              <div className="mt-1 flex justify-between font-mono text-[8px] tracking-wider text-quantum-subtle/80" dir="ltr">
+   570→                <span>▎{ch.classicalMark}</span>
+   571→                <span style={{ color: `${GOLD}cc` }}>▎{ch.quantumMark}</span>
+   572→              </div>
+   573→            </div>
+   574→
+   575→            {/* S estimator */}
+   576→            <div className="mt-4" role={S !== null ? "img" : undefined} aria-label={S !== null ? ch.sAria(S) : undefined}>
+   577→              <div className="mb-1 flex items-center justify-between">
+   578→                <span className="font-mono text-[9px] tracking-[0.2em] text-quantum-subtle">
+   579→                  {ch.sTitle}
+   580→                </span>
+   581→                <motion.span
+   582→                  key={S === null ? "pending" : S.toFixed(3)}
+   583→                  initial={{ opacity: 0.4, scale: 0.9 }}
+   584→                  animate={{ opacity: 1, scale: 1 }}
+   585→                  className={`font-mono text-sm font-black ${sBeat ? "text-[#00B894]" : "text-white"}`}
+   586→                  dir="ltr"
+   587→                >
+   588→                  {S === null ? "S = —" : `S = ${S.toFixed(3)}`}
+   589→                </motion.span>
+   590→              </div>
+   591→              <div className="relative h-2.5 overflow-hidden rounded-full bg-quantum-navy/80 ring-1 ring-inset ring-white/5">
+   592→                <motion.div
+   593→                  className="h-full rounded-full"
+   594→                  style={{
+   595→                    background: sBeat
+   596→                      ? `linear-gradient(90deg, #00D9FF, ${WIN_GREEN}, #FF6B9D)`
+   597→                      : `linear-gradient(90deg, #00D9FF, #6C5CE7)`,
+   598→                    boxShadow: sBeat ? `0 0 14px ${WIN_GREEN}88` : "none",
+   599→                  }}
+   600→                  animate={{ width: `${(sClamp / CHSH_QUANTUM_S) * 100}%` }}
+   601→                  transition={{ type: "spring", stiffness: 90, damping: 18 }}
+   602→                />
+   603→                {/* classical bound at S=2 → 70.7% of the 2√2 track */}
+   604→                <span
+   605→                  aria-hidden="true"
+   606→                  className="absolute inset-y-0 w-px bg-white/70"
+   607→                  style={{ left: `${(CHSH_CLASSICAL_S / CHSH_QUANTUM_S) * 100}%` }}
+   608→                />
+   609→              </div>
+   610→              <div className="mt-1 flex justify-between font-mono text-[8px] tracking-wider text-quantum-subtle/80" dir="ltr">
+   611→                <span>▎{ch.sClassicalMark}</span>
+   612→                <span>▎{ch.sQuantumMark}</span>
+   613→              </div>
+   614→              {S === null && (
+   615→                <p className="mt-1.5 text-[10px] italic text-quantum-subtle/70">{ch.sPending}</p>
+   616→              )}
+   617→            </div>
+   618→
+   619→            {/* recent rounds strip */}
+   620→            <div className="mt-4" role="status" aria-label={ch.historyAria}>
+   621→              <p className="mb-1.5 font-mono text-[9px] tracking-[0.2em] text-quantum-subtle">
+   622→                {ch.historyLabel}
+   623→              </p>
+   624→              {history.length === 0 ? (
+   625→                <p className="text-[10px] text-quantum-subtle/60">{ch.noRoundYet}</p>
+   626→              ) : (
+   627→                <div className="flex flex-wrap gap-1.5" dir="ltr">
+   628→                  {history.map((won, i) => (
+   629→                    <motion.span
+   630→                      key={`${i}-${won}`}
+   631→                      initial={{ scale: 0, opacity: 0 }}
+   632→                      animate={{ scale: 1, opacity: 1 }}
+   633→                      transition={{ type: "spring", stiffness: 320, damping: 18 }}
+   634→                      aria-hidden="true"
+   635→                      className="h-2.5 w-2.5 rounded-full"
+   636→                      style={{
+   637→                        background: won ? WIN_GREEN : LOSS_RED,
+   638→                        boxShadow: won ? `0 0 6px ${WIN_GREEN}` : "none",
+   639→                        opacity: won ? 1 : 0.55,
+   640→                      }}
+   641→                    />
+   642→                  ))}
+   643→                </div>
+   644→              )}
+   645→            </div>
+   646→          </div>
+   647→
+   648→          {/* Bell violation celebration */}
+   649→          <AnimatePresence>
+   650→            {violated && (
+   651→              <motion.div
+   652→                initial={{ opacity: 0, y: 12, scale: 0.95 }}
+   653→                animate={{ opacity: 1, y: 0, scale: 1 }}
+   654→                exit={{ opacity: 0, y: -8 }}
+   655→                transition={{ type: "spring", stiffness: 200, damping: 18 }}
+   656→                className="relative overflow-hidden rounded-xl border border-[#FFD166]/50 bg-gradient-to-br from-[#FFD166]/[0.12] to-[#FF6B9D]/[0.08] p-4"
+   657→              >
+   658→                <span
+   659→                  aria-hidden="true"
+   660→                  className="pointer-events-none absolute -top-4 end-3 select-none font-heading text-6xl font-black text-white/[0.05]"
+   661→                  dir="ltr"
+   662→                >
+   663→                  2√2
+   664→                </span>
+   665→                <p className="flex items-center gap-2 font-heading text-sm font-black text-[#FFD166]">
+   666→                  <Trophy className="h-4 w-4 animate-pulse" aria-hidden="true" />
+   667→                  {ch.violationBadge}
+   668→                </p>
+   669→                <p className="mt-1.5 text-xs leading-relaxed text-quantum-subtle">
+   670→                  {ch.violationNote}
+   671→                </p>
+   672→              </motion.div>
+   673→            )}
+   674→          </AnimatePresence>
+   675→        </div>
+   676→      </div>
+   677→
+   678→      {/* pedagogy footer */}
+   679→      <motion.div variants={quantumVariants} initial="hidden" whileInView="visible" viewport={viewport}>
+   680→        <div className="mt-6 border-t border-white/5 pt-4">
+   681→          <p className="text-xs leading-relaxed text-quantum-subtle md:text-sm">
+   682→            {ch.footerPre}
+   683→            <span className="font-heading font-bold text-[#FFD166]">{ch.footerAccent}</span>
+   684→            {ch.footerPost}
+   685→          </p>
+   686→        </div>
+   687→      </motion.div>
+   688→    </QuantumCard>
+   689→  );
+   690→}
+   691→

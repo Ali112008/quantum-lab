@@ -191,6 +191,18 @@ export interface Copy {
     footerAccent: string;
     footerPost: string;
     roundN: (n: number) => string;
+    recordsTitle: string;
+    recordsAria: string;
+    recBestS: string;
+    recBestSHint: string;
+    recBestWinRate: string;
+    recBestStreak: string;
+    recTotalRounds: string;
+    recNewBadge: string;
+    recLifetimeNote: string;
+    recNobelBadge: string;
+    recNobelNote: string;
+    streakNowLabel: string;
   };
   budget: {
     askEyebrow: string;
@@ -273,6 +285,14 @@ export interface Copy {
     subtitle: string;
     counterScanning: string;
     counter: (n: number) => string;
+    tiersEyebrow: string;
+    tiersAria: string;
+    tiers: { amount: string; name: string; tagline: string; perks: string[]; featured: boolean }[];
+    tiersNote: string;
+    tiersCta: string;
+    tiersFeaturedBadge: string;
+    qrTitle: string;
+    qrCaption: string;
     name: string;
     namePh: string;
     email: string;
@@ -589,6 +609,18 @@ const en: Copy = {
     footerPost:
       " — the exact CHSH protocol our students will run on entangled photons and superconducting hardware. In a browser tab you just reproduced the experiment that separates quantum mechanics from every classical theory.",
     roundN: (n) => `Round ${n}`,
+    recordsTitle: "HALL OF FAME",
+    recordsAria: "Personal bests, stored in this browser",
+    recBestS: "BEST S",
+    recBestSHint: "locks in after 8+ samples per setting pair",
+    recBestWinRate: "BEST WIN RATE",
+    recBestStreak: "BEST STREAK",
+    recTotalRounds: "LIFETIME ROUNDS",
+    recNewBadge: "NEW!",
+    recLifetimeNote: "lifetime record — stored in this browser only",
+    recNobelBadge: "NOBEL CLUB",
+    recNobelNote: "you have violated Bell's inequality here before",
+    streakNowLabel: "streak",
   },
   budget: {
     askEyebrow: "The Ask",
@@ -697,6 +729,41 @@ const en: Copy = {
     counterScanning: "SIGNAL SCANNING…",
     counter: (n) =>
       `${n} SIGNAL${n === 1 ? "" : "S"} RECEIVED — YOU'D BE MEASUREMENT #${n + 1}`,
+    tiersEyebrow: "PICK YOUR ENTANGLEMENT LEVEL",
+    tiersAria: "Sponsorship tiers",
+    tiers: [
+      {
+        amount: "$500",
+        name: "Qubit Sponsor",
+        tagline: "One student's full quantum toolkit for a semester.",
+        perks: ["Name on the donor wall", "Quarterly lab digest", "Open hackathon-day invite"],
+        featured: false,
+      },
+      {
+        amount: "$5,000",
+        name: "Gate Sponsor",
+        tagline: "A named scholarship plus a remote lab demo for your team.",
+        perks: ["Named student scholarship", "Private remote lab demo", "Co-branded workshop"],
+        featured: false,
+      },
+      {
+        amount: "$50,000",
+        name: "Founding Partner",
+        tagline: "The full lab. Your name on the door — and on the papers.",
+        perks: [
+          "Founding partner status · lab naming rights",
+          "First-look at graduating quantum talent",
+          "Seat on the research-roadmap review",
+          "Quarterly executive impact report",
+        ],
+        featured: true,
+      },
+    ],
+    tiersNote: "Every tier includes the quarterly transparency reports. Custom instruments (equipment, endowments) welcome.",
+    tiersCta: "Claim this tier",
+    tiersFeaturedBadge: "THE ASK",
+    qrTitle: "PREFER TO SCAN?",
+    qrCaption: "Point your camera — a draft email to the lab opens instantly.",
     name: "Name",
     namePh: "Dr. Ahmed Hassan",
     email: "Email",
@@ -1025,6 +1092,18 @@ const ar: Copy = {
     footerPost:
       " — بروتوكول CHSH نفسه الذي سيجريه طلابنا على الفوتونات المتشابكة والعتاد فائق التوصيل. في تبويب متصفح كنت تعيد للتو التجربة التي تفصل ميكانيكا الكم عن كل نظرية كلاسيكية.",
     roundN: (n) => `الجولة ${n}`,
+    recordsTitle: "قاعة الأرقام القياسية",
+    recordsAria: "أرقامك القياسية الشخصية، محفوظة في هذا المتصفح",
+    recBestS: "أعلى S",
+    recBestSHint: "يُثبَّت بعد 8 عينات فأكثر لكل زوج إعدادات",
+    recBestWinRate: "أفضل نسبة فوز",
+    recBestStreak: "أطول سلسلة انتصارات",
+    recTotalRounds: "إجمالي الجولات",
+    recNewBadge: "رقم قياسي!",
+    recLifetimeNote: "سجل مدى الحياة — محفوظ في هذا المتصفح فقط",
+    recNobelBadge: "نادي نوبل",
+    recNobelNote: "لقد كسرتَ متباينة بِل هنا من قبل",
+    streakNowLabel: "السلسلة الحالية",
   },
   budget: {
     askEyebrow: "المطلوب",
@@ -1156,6 +1235,41 @@ const ar: Copy = {
       { value: "join", label: "الانضمام للفريق (|0⟩ / |1⟩)" },
       { value: "other", label: "شيء آخر" },
     ],
+    tiersEyebrow: "اختر مستوى تشابكك",
+    tiersAria: "مستويات الرعاية",
+    tiers: [
+      {
+        amount: "500$",
+        name: "راعي الكيوبت",
+        tagline: "عدة كمومية كاملة لطالب واحد لفصل دراسي.",
+        perks: ["اسمك على جدار الداعمين", "ملخص فصلي عن المختبر", "دعوة إلى يوم الهاكاثون المفتوح"],
+        featured: false,
+      },
+      {
+        amount: "5,000$",
+        name: "راعي البوابة",
+        tagline: "منحة باسمك مع عرض حيّ للمختبر لفريقك عن بُعد.",
+        perks: ["منحة للطلاب باسم جهتك", "عرض خاص للمختبر عن بُعد", "ورشة عمل بعلامة مشتركة"],
+        featured: false,
+      },
+      {
+        amount: "50,000$",
+        name: "الشريك المؤسِّس",
+        tagline: "المختبر كاملًا. اسمك على الباب — وعلى الأوراق البحثية.",
+        perks: [
+          "صفة الشريك المؤسِّس · حقوق تسمية المختبر",
+          "أولوية الاطلاع على الخريجين الكموميين",
+          "مقعد في مراجعة خارطة البحث",
+          "تقرير أثر تنفيذي فصلي",
+        ],
+        featured: true,
+      },
+    ],
+    tiersNote: "كل المستويات تشمل تقارير الشفافية الفصلية. نرحّب بالعتاد والوقفيات المخصصة.",
+    tiersCta: "احجز هذا المستوى",
+    tiersFeaturedBadge: "المطلوب",
+    qrTitle: "تفضّل المسح؟",
+    qrCaption: "وجّه كاميرتك — يُفتح مسودة بريد إلى المختبر فورًا.",
     message: "الرسالة",
     messagePh: "أخبرنا كيف تودّ التشابك مع المختبر…",
     privacy: "مشفَّرة أثناء النقل · تُخزَّن في قاعدة بيانات مختبرنا فقط",

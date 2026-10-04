@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Send, Loader2, CheckCircle2, Activity } from "lucide-react";
+import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { quantumVariants, viewport } from "@/lib/animations";
 import { useLang } from "@/lib/LanguageProvider";
+import { LAB_EMAIL } from "@/lib/data";
 
 /**
  * SECTION 08 — MAKE CONTACT
@@ -158,6 +160,107 @@ export default function ContactSection() {
         />
 
         <SignalCounter />
+
+        {/* ══ SPONSORSHIP TIERS — pick your entanglement level ══
+            Three on-ramps into the ask: a single qubit, a gate, or the
+            whole register. The featured tier mirrors the full $50K ask. */}
+        <motion.div
+          variants={quantumVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          className="mb-10"
+          role="group"
+          aria-label={t.contact.tiersAria}
+        >
+          <p className="mb-5 flex items-center justify-center gap-2 text-center font-mono text-[11px] tracking-[0.3em] text-quantum-amber">
+            <Gem className="size-3.5" aria-hidden="true" />
+            {t.contact.tiersEyebrow}
+          </p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {t.contact.tiers.map((tier, i) => (
+              <motion.div
+                key={tier.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ delay: i * 0.12, type: "spring", stiffness: 140, damping: 18 }}
+                whileHover={{ y: -6 }}
+                className={`relative flex flex-col rounded-2xl border p-5 backdrop-blur-sm transition-shadow duration-300 ${
+                  tier.featured
+                    ? "border-quantum-amber/50 bg-gradient-to-b from-quantum-amber/[0.10] to-quantum-secondary/70 shadow-[0_0_36px_-8px_rgba(251,191,36,0.35)]"
+                    : "border-white/10 bg-quantum-secondary/60 hover:border-quantum-blue/40"
+                }`}
+              >
+                {tier.featured && (
+                  <span className="absolute -top-2.5 end-4 inline-flex items-center gap-1 rounded-full border border-quantum-amber/60 bg-quantum-navy px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.18em] text-quantum-amber shadow-[0_0_12px_rgba(251,191,36,0.4)]">
+                    <Sparkles className="size-3" aria-hidden="true" />
+                    {t.contact.tiersFeaturedBadge}
+                  </span>
+                )}
+                <p className="font-mono text-2xl font-black tracking-tight text-white" dir="ltr">
+                  {tier.amount}
+                </p>
+                <h3 className={`mt-1 font-heading text-sm font-bold ${tier.featured ? "text-quantum-amber" : "text-quantum-blue"}`}>
+                  {tier.name}
+                </h3>
+                <p className="mt-1.5 min-h-10 text-xs leading-relaxed text-quantum-subtle">
+                  {tier.tagline}
+                </p>
+                <ul className="mt-3 flex-1 space-y-1.5">
+                  {tier.perks.map((perk) => (
+                    <li key={perk} className="flex items-start gap-1.5 text-[11px] leading-snug text-quantum-text/85">
+                      <Check className="mt-0.5 size-3 shrink-0 text-quantum-green" aria-hidden="true" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
+                    `Sponsorship — ${tier.name} (${tier.amount})`
+                  )}`}
+                  className={`mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border font-heading text-xs font-bold transition-all ${
+                    tier.featured
+                      ? "border-quantum-amber/60 bg-quantum-amber/15 text-quantum-amber hover:bg-quantum-amber/25 hover:shadow-[0_0_22px_rgba(251,191,36,0.4)]"
+                      : "border-quantum-blue/40 bg-quantum-blue/5 text-quantum-blue hover:bg-quantum-blue/15 hover:shadow-[0_0_16px_rgba(0,217,255,0.3)]"
+                  }`}
+                >
+                  <Send className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
+                  {t.contact.tiersCta}
+                </a>
+              </motion.div>
+            ))}
+          </div>
+          <p className="mt-4 text-center text-[11px] text-quantum-subtle/80">{t.contact.tiersNote}</p>
+        </motion.div>
+
+        {/* ══ SCAN-TO-EMAIL — a print-safe bridge: the QR encodes a mailto:
+            so it works on paper, posters and projectors, forever. ══ */}
+        <motion.div
+          variants={quantumVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          className="mx-auto mb-10 flex w-fit items-center gap-4 rounded-2xl border border-white/10 bg-quantum-secondary/60 p-4"
+        >
+          <div className="relative shrink-0 rounded-xl bg-white p-1.5 shadow-[0_0_18px_rgba(0,217,255,0.25)]">
+            <Image
+              src="/images/qr-lab-email.png"
+              alt={t.contact.qrTitle}
+              width={72}
+              height={72}
+              className="size-18"
+            />
+            <span aria-hidden="true" className="absolute inset-0 rounded-xl ring-1 ring-quantum-blue/40" />
+          </div>
+          <div className="max-w-52">
+            <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.22em] text-quantum-blue">
+              <QrCode className="size-3.5" aria-hidden="true" />
+              {t.contact.qrTitle}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-quantum-subtle">{t.contact.qrCaption}</p>
+          </div>
+        </motion.div>
 
         <motion.div
           variants={quantumVariants}
