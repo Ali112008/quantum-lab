@@ -25,6 +25,13 @@ export interface TeamMember {
   group: TeamGroup;
   /** open founding seat rendered with dashed border */
   open?: boolean;
+  /**
+   * Optional real photo path (e.g. "/images/team/ali.jpg") — when set,
+   * the Team grid renders this image instead of the generated QuantumAvatar.
+   * Drop files into public/images/team/ and add the path here; nothing else
+   * to change. Until then every member keeps their deterministic avatar.
+   */
+  photo?: string;
 }
 
 const OPEN_SEAT_YEAR = l("Could be you — apply now", "قد تكون أنت — قدّم الآن");
@@ -465,6 +472,21 @@ export const BUDGET_ITEMS: BudgetItem[] = [
 ];
 
 export const TOTAL_SEED = 50000;
+
+/**
+ * Live seed-round progress — drives the "Road to $50,000" tube in the
+ * contact section. HONESTY RULE: update `raised` only after a pledge is
+ * actually confirmed in writing; never pre-fill aspirational numbers.
+ * When the round closes or a backend arrives, wire this to Prisma/Stripe
+ * and the UI keeps working unchanged.
+ */
+export const FUNDRAISING = {
+  goal: TOTAL_SEED,
+  raised: 0,
+  /** Milestones on the tube — positions are log-decade spaced so the
+      $500 → $5,000 → $50,000 steps sit at equal visual intervals. */
+  milestones: [0.18, 0.5, 1] as const,
+};
 
 export interface BudgetScenario {
   amount: number;

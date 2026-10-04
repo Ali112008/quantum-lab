@@ -9,14 +9,17 @@ import {
   Link2,
   Medal,
   RotateCcw,
+  Share2,
   Swords,
   Target,
   Trophy,
 } from "lucide-react";
 import QuantumCard from "@/components/ui/QuantumCard";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useLang } from "@/lib/LanguageProvider";
 import { quantumVariants, viewport } from "@/lib/animations";
+import { buildShareCardBlob } from "@/lib/shareCard";
 import {
   CHSH_CLASSICAL_S,
   CHSH_CLASSICAL_WIN,
@@ -148,6 +151,7 @@ function BasisDial({ phi, accent }: { phi: number; accent: string }) {
 
 export default function ChshGame() {
   const { t } = useLang();
+  const { toast } = useToast();
   const ch = t.chsh;
 
   const [phase, setPhase] = useState<Phase>("ready");
@@ -305,6 +309,76 @@ export default function ChshGame() {
   const winPct = winRate * 100;
   const sClamp = S !== null ? Math.min(Math.max(S, 0), CHSH_QUANTUM_S) : 0;
   const sBeat = S !== null && S > CHSH_CLASSICAL_S;
+
+  /* --------------------------- share card -------------------------- */
+
+  const [sharing, setSharing] = useState(false);
+
+  /**
+   * Render the scoreboard to a PNG and hand it to the platform:
+   * native share sheet (mobile) → clipboard image + download fallback.
+   * Gated on lifetime rounds — an empty card would be a lie.
+   * NOTE: lives AFTER winPct/S declarations — the callback closes over
+   * them, and a useCallback placed above its captures is a TDZ crash.
+   */
+  const handleShare = useCallback(async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const blob = await buildShareCardBlob({
+        s: S,
+        winPct: totalRounds > 0 ? winPct : null,
+        rounds: totalRounds,
+        wins,
+        bestStreak: records.bestStreak,
+        totalRoundsEver: records.totalRoundsEver,
+        violationEver: records.violationEver,
+      });
+      if (!blob) throw new Error("canvas unavailable");
+      const file = new File([blob], "chsh-quantum-score.png", {
+        type: "image/png",
+      });
+      type ShareNav = Navigator & {
+        canShare?: (data: ShareData) => boolean;
+      };
+      const nav = navigator as ShareNav;
+      if (
+        typeof nav.share === "function" &&
+        typeof nav.canShare === "function" &&
+        nav.canShare({ files: [file] })
+      ) {
+        await nav.share({
+          files: [file],
+          title: "Quantum beats classical — my CHSH score",
+          text: ch.shareToastDesc,
+        });
+      } else {
+        // Fallback: save the PNG, and try the clipboard image API on top.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "chsh-quantum-score.png";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+        } catch {
+          /* clipboard image unsupported here — the download already happened */
+        }
+      }
+      toast({ title: ch.shareToastTitle, description: ch.shareToastDesc });
+    } catch {
+      toast({
+        title: ch.shareToastFailTitle,
+        description: ch.shareToastFailDesc,
+        variant: "destructive",
+      });
+    } finally {
+      setSharing(false);
+    }
+  }, [sharing, S, totalRounds, winPct, wins, records, ch, toast]);
 
   return (
     <QuantumCard accent={GOLD} noReveal className="p-6 md:p-8">
@@ -709,10 +783,25 @@ export default function ChshGame() {
             aria-label={ch.recordsAria}
             className="relative rounded-xl border border-[#FFD166]/20 bg-quantum-secondary/50 p-4"
           >
-            <p className="mb-3 flex items-center gap-1.5 font-mono text-[10px] tracking-[0.25em] text-[#FFD166]/90">
-              <Medal className="h-3.5 w-3.5" aria-hidden="true" />
-              {ch.recordsTitle}
-            </p>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.25em] text-[#FFD166]/90">
+                <Medal className="h-3.5 w-3.5" aria-hidden="true" />
+                {ch.recordsTitle}
+              </p>
+              <button
+                type="button"
+                onClick={handleShare}
+                disabled={sharing || records.totalRoundsEver === 0}
+                title={
+                  records.totalRoundsEver === 0 ? ch.shareHintEmpty : undefined
+                }
+                aria-label={ch.shareAria}
+                className="flex min-h-8 items-center gap-1.5 rounded-full border border-[#FFD166]/40 bg-[#FFD166]/[0.08] px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-[#FFD166] transition-all hover:bg-[#FFD166]/20 hover:shadow-[0_0_16px_rgba(255,209,102,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
+              >
+                <Share2 className="h-3 w-3" aria-hidden="true" />
+                {ch.shareBtn}
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-2 text-center" dir="ltr">
               {(
                 [

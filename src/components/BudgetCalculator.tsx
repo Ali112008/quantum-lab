@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
-import { Info, Sparkles, TrendingUp } from "lucide-react";
+import { HandCoins, Info, Sparkles, TrendingUp } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Counter from "@/components/ui/Counter";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +15,7 @@ import {
   BUDGET_CATEGORIES,
   BUDGET_ITEMS,
   BUDGET_SCENARIOS,
+  LAB_EMAIL,
   TOTAL_SEED,
   calculateROI,
 } from "@/lib/data";
@@ -330,7 +331,7 @@ export default function BudgetCalculator() {
             {t.budget.itemizedSub}
           </p>
           <div className="overflow-x-auto thin-scroll rounded-2xl border border-white/5 bg-quantum-secondary/60">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <caption className="sr-only">
                 {t.budget.tableCaption}
               </caption>
@@ -339,6 +340,7 @@ export default function BudgetCalculator() {
                   <th scope="col" className="px-6 py-4 text-start">{t.budget.colResource}</th>
                   <th scope="col" className="px-6 py-4 text-end">{t.budget.colQty}</th>
                   <th scope="col" className="px-6 py-4 text-end">{t.budget.colCost}</th>
+                  <th scope="col" className="px-4 py-4 text-center">{t.budget.fundCol}</th>
                 </tr>
               </thead>
               <tbody>
@@ -356,6 +358,19 @@ export default function BudgetCalculator() {
                     <td className="px-6 py-3.5 text-end font-mono text-quantum-text tabular-nums" dir="ltr">
                       {fmt(item.cost)}
                     </td>
+                    <td className="px-4 py-3.5 text-center">
+                      {/* Adopt-a-line: one mailto per audited item — the
+                          transparency table doubles as a funding menu. */}
+                      <a
+                        href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
+                          `Funding — ${item.resource.en} (${fmt(item.cost)})`
+                        )}`}
+                        aria-label={t.budget.fundAria(tx(item.resource), fmt(item.cost))}
+                        className="inline-flex size-9 items-center justify-center rounded-lg border border-quantum-green/30 bg-quantum-green/5 text-quantum-green/75 opacity-70 transition-all hover:opacity-100 hover:shadow-[0_0_16px_rgba(0,184,148,0.4)] hover:border-quantum-green/60 focus-visible:opacity-100"
+                      >
+                        <HandCoins className="size-4" aria-hidden="true" />
+                      </a>
+                    </td>
                   </tr>
                 ))}
                 <tr className="border-b-2 border-t-2 border-quantum-blue/30 bg-quantum-navy/60">
@@ -366,6 +381,7 @@ export default function BudgetCalculator() {
                   <td className="px-6 py-4 text-end font-heading text-xl font-black text-quantum-green text-glow-green tabular-nums" dir="ltr">
                     $50,000
                   </td>
+                  <td />
                 </tr>
               </tbody>
             </table>

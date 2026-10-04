@@ -203,6 +203,13 @@ export interface Copy {
     recNobelBadge: string;
     recNobelNote: string;
     streakNowLabel: string;
+    shareBtn: string;
+    shareAria: string;
+    shareHintEmpty: string;
+    shareToastTitle: string;
+    shareToastDesc: string;
+    shareToastFailTitle: string;
+    shareToastFailDesc: string;
   };
   budget: {
     askEyebrow: string;
@@ -239,6 +246,8 @@ export interface Copy {
     colResource: string;
     colQty: string;
     colCost: string;
+    fundCol: string;
+    fundAria: (item: string, cost: string) => string;
     tableCaption: string;
     totalSeed: string;
     closing: string;
@@ -293,6 +302,15 @@ export interface Copy {
     tiersFeaturedBadge: string;
     qrTitle: string;
     qrCaption: string;
+    fundEyebrow: string;
+    fundTitle: string;
+    fundSub: string;
+    fundGoalChip: string;
+    fundRaisedLabel: string;
+    fundPctLabel: (pct: number) => string;
+    fundEmpty: string;
+    fundAria: string;
+    fundMilestones: { at: string; label: string }[];
     name: string;
     namePh: string;
     email: string;
@@ -621,6 +639,15 @@ const en: Copy = {
     recNobelBadge: "NOBEL CLUB",
     recNobelNote: "you have violated Bell's inequality here before",
     streakNowLabel: "streak",
+    shareBtn: "Share score",
+    shareAria: "Share your quantum scoreboard as an image",
+    shareHintEmpty: "Play a few rounds first — your records live in this browser.",
+    shareToastTitle: "Score card ready ✅",
+    shareToastDesc:
+      "Your quantum scoreboard left the lab — thanks for spreading entanglement.",
+    shareToastFailTitle: "Couldn't share the card",
+    shareToastFailDesc:
+      "The browser declined image sharing — the PNG was downloaded instead.",
   },
   budget: {
     askEyebrow: "The Ask",
@@ -665,6 +692,8 @@ const en: Copy = {
     colResource: "Resource",
     colQty: "Qty",
     colCost: "Cost",
+    fundCol: "Fund",
+    fundAria: (item, cost) => `Fund this item: ${item} — ${cost}`,
     tableCaption:
       "Itemized budget for the full fifty thousand dollar seed request",
     totalSeed: "TOTAL SEED",
@@ -764,6 +793,20 @@ const en: Copy = {
     tiersFeaturedBadge: "THE ASK",
     qrTitle: "PREFER TO SCAN?",
     qrCaption: "Point your camera — a draft email to the lab opens instantly.",
+    fundEyebrow: "ROAD TO $50,000",
+    fundTitle: "The seed round is open",
+    fundSub:
+      "One founding partner, or a constellation of smaller sponsors — every qubit counts.",
+    fundGoalChip: "SEED ROUND · OPEN",
+    fundRaisedLabel: "raised so far",
+    fundPctLabel: (pct) => `${pct}% of the full lab`,
+    fundEmpty: "Be our first sponsor — the first measurement collapses this state.",
+    fundAria: "Seed funding progress — the road to fifty thousand dollars",
+    fundMilestones: [
+      { at: "$500", label: "first qubit" },
+      { at: "$5,000", label: "first gate" },
+      { at: "$50,000", label: "full lab" },
+    ],
     name: "Name",
     namePh: "Dr. Ahmed Hassan",
     email: "Email",
@@ -1104,6 +1147,15 @@ const ar: Copy = {
     recNobelBadge: "نادي نوبل",
     recNobelNote: "لقد كسرتَ متباينة بِل هنا من قبل",
     streakNowLabel: "السلسلة الحالية",
+    shareBtn: "شارك النتيجة",
+    shareAria: "شارك لوحة نتائجك الكمومية كصورة",
+    shareHintEmpty: "العب بعض الجولات أولًا — أرقامك القياسية محفوظة في هذا المتصفح.",
+    shareToastTitle: "بطاقة النتيجة جاهزة ✅",
+    shareToastDesc:
+      "لوحة نتائجك الكمومية غادرت المختبر — شكرًا لنشر التشابك.",
+    shareToastFailTitle: "تعذّرت مشاركة البطاقة",
+    shareToastFailDesc:
+      "رفض المتصفح مشاركة الصور — نزّلنا ملف PNG بدلًا من ذلك.",
   },
   budget: {
     askEyebrow: "المطلوب",
@@ -1152,6 +1204,8 @@ const ar: Copy = {
     colResource: "البند",
     colQty: "الكمية",
     colCost: "التكلفة",
+    fundCol: "تمويل",
+    fundAria: (item, cost) => `موّل هذا البند: ${item} — ${cost}`,
     tableCaption: "الميزانية التفصيلية لطلب التمويل التأسيسي الكامل (خمسون ألف دولار)",
     totalSeed: "إجمالي التمويل",
     closing:
@@ -1270,6 +1324,20 @@ const ar: Copy = {
     tiersFeaturedBadge: "المطلوب",
     qrTitle: "تفضّل المسح؟",
     qrCaption: "وجّه كاميرتك — يُفتح مسودة بريد إلى المختبر فورًا.",
+    fundEyebrow: "الطريق إلى 50,000 دولار",
+    fundTitle: "جولة التمويل التأسيسي مفتوحة",
+    fundSub:
+      "شريك مؤسِّس واحد، أو كوكبة من الرعاة الأصغر — كل كيوبت يصنع فرقًا.",
+    fundGoalChip: "جولة التمويل · مفتوحة",
+    fundRaisedLabel: "تم جمعه حتى الآن",
+    fundPctLabel: (pct) => `${pct}% من المختبر الكامل`,
+    fundEmpty: "كن أول راعينا — القياس الأول يُسقط حالة التراكب.",
+    fundAria: "تقدّم تمويل التأسيس — الطريق إلى خمسين ألف دولار",
+    fundMilestones: [
+      { at: "500$", label: "أول كيوبت" },
+      { at: "5,000$", label: "أول بوابة" },
+      { at: "50,000$", label: "المختبر الكامل" },
+    ],
     message: "الرسالة",
     messagePh: "أخبرنا كيف تودّ التشابك مع المختبر…",
     privacy: "مشفَّرة أثناء النقل · تُخزَّن في قاعدة بيانات مختبرنا فقط",
