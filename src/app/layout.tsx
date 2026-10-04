@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import { Inter, Montserrat, Cairo } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { LanguageProvider } from "@/lib/LanguageProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -13,6 +14,14 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
   weight: ["500", "600", "700", "800", "900"],
+  display: "swap",
+});
+
+/** Arabic companion face — Montserrat has no Arabic glyphs, Cairo carries |AR⟩. */
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -114,21 +123,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${montserrat.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${montserrat.variable} ${cairo.variable} antialiased bg-background text-foreground`}
       >
-        {/* Accessibility: skip straight to content, WCAG 2.1 §2.4.1 */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-quantum-blue focus:px-4 focus:py-2.5 focus:font-heading focus:text-sm focus:font-bold focus:text-quantum-navy focus:shadow-[0_0_24px_rgba(0,217,255,0.5)]"
-        >
-          Skip to main content
-        </a>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        {children}
-        <Toaster />
+        {/* Language observer — collapses every L10n string to |EN⟩ or |AR⟩ */}
+        <LanguageProvider>
+          {/* Accessibility: skip straight to content, WCAG 2.1 §2.4.1 */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-quantum-blue focus:px-4 focus:py-2.5 focus:font-heading focus:text-sm focus:font-bold focus:text-quantum-navy focus:shadow-[0_0_24px_rgba(0,217,255,0.5)]"
+          >
+            Skip to main content
+          </a>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

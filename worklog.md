@@ -86,3 +86,39 @@ Stage Summary:
 - Next-phase recommendations (priority): 1) AR/EN bilingual toggle + RTL (next-intl installed; biggest remaining item, needs direction-aware animation pass); 2) protected admin inbox for inquiries (note: only / route is user-visible per platform constraint — consider email digest cron or basic-auth API instead); 3) sitemap/OG deploy wiring via NEXT_PUBLIC_SITE_URL; 4) team photo uploads for the 13 real members.
 
 ---
+---
+Task ID: 4
+Agent: Z.ai Code (cron webDevReview round 3)
+Task: Assess status, QA via agent-browser, then add new features (bilingual AR/EN + newsletter + styling polish).
+
+Work Log:
+- Status assessment: dev.log clean, no runtime errors; agent-browser QA regression pass (desktop 1440x900 + mobile 390x844) — budget $10K preset (donut 20%, sentence "With $10,000, we can train 40 students", aria-pressed), FAQ single-open accordion, team Research filter (2 cards), mobile hamburger menu all PASS. No bugs found → proceeded to feature development per round-2 recommendations.
+- MAJOR FEATURE — AR/EN bilingual toggle with full RTL:
+  - src/lib/i18n.ts: Lang/L10n types, l() builder, tr() collapse helper, PAGE_TITLES, STORAGE_KEY.
+  - src/lib/copy.ts: typed bilingual Copy deck (~260 strings x2 languages) — nav, hero, all 8 sections, forms, footer, aria labels; templated builders (budget outcome sentence, signal counter, newsletter count, phase bra-ket, donut aria).
+  - src/lib/LanguageProvider.tsx: client context (lang/t/tx/toggle), localStorage persistence, <html lang dir> flip, document.title management incl. MutationObserver guard (Next re-asserts SSR title after hydration) + deferred re-assert.
+  - src/lib/data.ts: ALL display fields converted to L10n pairs (team roles/years/skills, funnel labels, features, pillars, stack, track record, 3 phases + activities + milestones, budget categories/items/scenarios, Year-3 outcomes, 8 FAQ Q&A, nav links). Team NAMES stay Latin (user-provided roster).
+  - layout.tsx: Cairo Arabic font (next/font, variable --font-cairo) + LanguageProvider wrapper.
+  - globals.css: RTL layer — Cairo-first font stack for body/headings in dir=rtl, letter-spacing neutralized for Arabic ([class*="tracking-"] rule), line-height 1.75.
+  - All 13 components rewired to useLang()/tx(); logical properties (ps/pe/start/end/text-start) replace physical ones; rtl: variants for hover translate, arrows (rtl:-scale-x-100), scroll-to-top corner, progress-beam origin; numbers/$ amounts pinned dir="ltr"; QuantumTicker forced dir="ltr" (marquee physics unchanged).
+  - Arabic quality: MSA scientific register; Arabic numeral agreement in ROI sentence (3-10 plural → "5 أوراق محكَّمة", else singular accusative → "40 طالبًا"); Arabic-embedded Latin tech tokens (Qiskit, IBM Quantum) flow correctly under bidi.
+  - Navbar: EN⇄AR pill toggle (desktop + mobile menu row), scroll-spy active link with measurement beam (aria-current), Cairo for the "عربي" label.
+  - A11y: headline words joined by REAL space text-nodes (was margin-only → screen readers glued words); localized aria labels throughout; localized zod validation messages (schema rebuilt per language via useMemo); localized 429 rate-limit message (client maps status→copy, server stays English).
+- FEATURE — Newsletter "Stay Entangled" (fullstack):
+  - prisma/schema.prisma: Subscriber model (unique email); bun run db:push OK.
+  - src/app/api/subscribe/route.ts: POST (zod, 5/10min rate limit, honeypot→fake 202, P2002→{ok,duplicate:true}), GET (public total, no-store). Live-tested: 201 first / duplicate:true on repeat / 400 invalid / 429 burst / honeypot stores nothing. Test rows cleaned (0 subscribers).
+  - Footer.tsx: newsletter card (title, email input dir=ltr, submit with spinner, live "N ON THE LIST" counter from GET, success/duplicate/error toasts), honeypot field.
+- STYLING POLISH:
+  - SectionDivider component (entangled qubit trio on hairline beam, pulsing, symmetric/RTL-safe) inserted between major sections (4 instances, per-section accents).
+  - ScrollToTop: measurement progress ring (SVG stroke-dashoffset fills with reading progress).
+  - Scroll-spy navbar active beam (see above).
+  - Ticker, badges, hero caption localized; mobile menu language row.
+- Infra note: after db:push, the running dev server kept the OLD PrismaClient (module cache + globalThis singleton) → /api/subscribe 500 "cannot read count". Fixed by touching next.config.ts which forces a full `next dev` server restart (fresh module cache). Documented in next.config.ts comment.
+- Bug fixes this round: duplicate React keys (TRACK_RECORD #FFD166 → key=title.en; BUDGET_ITEMS cost 10000 → key=resource.en); headline missing word spaces (a11y); Arabic title override by Next metadata (MutationObserver guard); Arabic numeral agreement in outcome sentence.
+- bun run lint → clean. Final browser sweep: zero console errors in fresh session (EN + AR), desktop + mobile verified in both languages, RTL layout correct end-to-end (hero, funnel, donut, tables, FAQ, footer, mobile menu).
+
+Stage Summary:
+- Status: stable MVP+++ — 11 sections, bilingual AR/EN with full RTL, scroll-spy nav, newsletter fullstack pipeline, inquiry pipeline (rate-limited + honeypot), SEO/OG/sitemap, downloadable A4 PDF.
+- Verification highlights: AR toggle persists across reload (localStorage qrl-lang); dir=rtl flips nav/menu/cards/tables/slider correctly; Cairo renders headings/body; budget interactions verified in BOTH languages; subscribe API all paths live-tested; localized toasts render (verified via ol.fixed viewport — note: [data-radix-toast-viewport] selector does NOT exist in this Radix version).
+- Risks/notes: lang flash on hard reload (EN paints first, saved AR applies post-hydration — standard for client-side i18n without cookies); rate limiter is per-IP in-memory and shares the "local" key between curl and browser tests in this sandbox (bursts may 429 during dev testing; production keys differ); newsletter has no double opt-in (fine for MVP); one-pager PDF remains EN-only (candidate for AR version next).
+- Next-phase recommendations (priority): 1) Arabic one-page PDF proposal (mirror of the EN one-pager with RTL layout); 2) admin inbox / email digest for inquiries+subscribers (platform constraint: only / route user-visible — consider basic-auth API or cron digest); 3) NEXT_PUBLIC_SITE_URL deploy wiring for OG/sitemap; 4) team photos for the 13 real members; 5) consider html lang pass on server via cookie for zero-flash i18n.

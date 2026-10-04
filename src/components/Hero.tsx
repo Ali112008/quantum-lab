@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import {
   motion,
   useMotionValue,
@@ -9,18 +9,19 @@ import {
 } from "framer-motion";
 import { ChevronDown, Sparkles, Users, ArrowDown } from "lucide-react";
 import { heroStagger, wordRise, quantumVariants, viewport } from "@/lib/animations";
+import { useLang } from "@/lib/LanguageProvider";
 
 /**
  * Quantum circuit — an SVG "3D-ish" visualization of a Bell-state circuit
  * (H gate → CNOT → measurement), the same circuit students run in week 2.
  * Nodes pulse; entangling wire glows.
  */
-function QuantumCircuit() {
+function QuantumCircuit({ ariaLabel }: { ariaLabel: string }) {
   return (
     <svg
       viewBox="0 0 420 210"
       role="img"
-      aria-label="Quantum circuit diagram: Hadamard gate on qubit 0, CNOT entangling qubits 0 and 1, measurement on both"
+      aria-label={ariaLabel}
       className="w-full max-w-[460px] drop-shadow-[0_0_25px_rgba(0,217,255,0.25)]"
     >
       <defs>
@@ -175,15 +176,9 @@ const FLOATING_SYMBOLS = [
   { glyph: "ħ", x: "22%", y: "12%", delay: "2.6s", size: "text-lg md:text-2xl" },
 ];
 
-const HEADLINE_WORDS: { text: string; accent?: string }[] = [
-  { text: "Building" },
-  { text: "Egypt's" },
-  { text: "Quantum", accent: "gradient" },
-  { text: "Future", accent: "gradient" },
-  { text: "Today" },
-];
-
 export default function Hero() {
+  const { t } = useLang();
+
   // Mouse parallax — the circuit drifts gently against the cursor.
   const ref = useRef<HTMLElement>(null);
   const mx = useMotionValue(0);
@@ -207,7 +202,7 @@ export default function Hero() {
       ref={ref}
       onMouseMove={handleMouse}
       className="relative flex min-h-screen items-center overflow-hidden pt-16"
-      aria-label="Introduction"
+      aria-label={t.misc.heroSectionAria}
     >
       {/* radial spotlight */}
       <div
@@ -239,22 +234,26 @@ export default function Hero() {
               className="mb-6 inline-flex items-center gap-2 rounded-full border border-quantum-blue/30 bg-quantum-secondary/60 px-4 py-1.5 font-mono text-[11px] md:text-xs tracking-[0.25em] text-quantum-blue uppercase"
             >
               <Sparkles className="size-3.5" aria-hidden="true" />
-              Seed Pitch · 2026 · Student-Led · Faculty-Mentored
+              {t.hero.badge}
             </motion.p>
 
             <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-black leading-[1.05] tracking-tight text-white">
-              {HEADLINE_WORDS.map((w, i) => (
-                <motion.span
-                  key={w.text + i}
-                  variants={wordRise}
-                  className={
-                    w.accent === "gradient"
-                      ? "inline-block mr-[0.28em] bg-gradient-to-r from-quantum-blue via-[#4CC9F0] to-quantum-purple bg-clip-text text-transparent text-glow-cyan"
-                      : "inline-block mr-[0.28em]"
-                  }
-                >
-                  {w.text}
-                </motion.span>
+              {/* Real space text-nodes between words keep screen readers
+                  reading words, not one glued superposition. */}
+              {t.hero.headline.map((w, i, arr) => (
+                <Fragment key={w.text + i}>
+                  <motion.span
+                    variants={wordRise}
+                    className={
+                      w.accent
+                        ? "inline-block bg-gradient-to-r from-quantum-blue via-[#4CC9F0] to-quantum-purple bg-clip-text text-transparent text-glow-cyan"
+                        : "inline-block"
+                    }
+                  >
+                    {w.text}
+                  </motion.span>
+                  {i < arr.length - 1 ? " " : null}
+                </Fragment>
               ))}
             </h1>
 
@@ -262,16 +261,15 @@ export default function Hero() {
               variants={wordRise}
               className="mt-6 max-w-xl text-base md:text-xl text-quantum-subtle leading-relaxed"
             >
-              A student-led{" "}
+              {t.hero.subPre}{" "}
               <span className="text-quantum-text font-medium">
-                Quantum Research Lab
+                {t.hero.subLab}
               </span>{" "}
-              seeking{" "}
+              {t.hero.subMid}{" "}
               <span className="text-quantum-green font-semibold text-glow-green">
                 $50,000
               </span>{" "}
-              in seed funding — where students simulate reality on real quantum
-              hardware, and the first lab of its kind in the region.
+              {t.hero.subPost}
             </motion.p>
 
             <motion.div variants={wordRise} className="mt-9 flex flex-col sm:flex-row gap-4">
@@ -281,7 +279,7 @@ export default function Hero() {
                 whileTap={{ scale: 0.97 }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-quantum-blue px-7 py-4 font-heading font-bold text-quantum-navy animate-pulse-glow hover:bg-[#33e1ff] transition-colors"
               >
-                Explore Our Proposal
+                {t.hero.ctaExplore}
                 <ArrowDown className="size-4" aria-hidden="true" />
               </motion.a>
               <motion.a
@@ -291,7 +289,7 @@ export default function Hero() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-quantum-purple/60 bg-quantum-purple/10 px-7 py-4 font-heading font-bold text-white hover:bg-quantum-purple/25 hover:shadow-[0_0_28px_rgba(108,92,231,0.4)] transition-all"
               >
                 <Users className="size-4" aria-hidden="true" />
-                Meet the Team
+                {t.hero.ctaTeam}
               </motion.a>
             </motion.div>
 
@@ -300,11 +298,7 @@ export default function Hero() {
               variants={wordRise}
               className="mt-10 flex flex-wrap gap-2.5 font-mono text-[10px] md:text-[11px] tracking-wider text-quantum-subtle"
             >
-              {[
-                "Presented to ASRT · ITIDA",
-                "Global Quantum Partners",
-                "15-Minute Investor Edition",
-              ].map((b) => (
+              {t.hero.badges.map((b) => (
                 <li
                   key={b}
                   className="rounded-full border border-quantum-blue/20 bg-quantum-secondary/50 px-3.5 py-1.5"
@@ -324,9 +318,9 @@ export default function Hero() {
             className="relative mx-auto hidden sm:block"
           >
             <div className="glass-panel rounded-3xl p-6 md:p-8 animate-float-slow">
-              <QuantumCircuit />
+              <QuantumCircuit ariaLabel={t.hero.circuitAria} />
               <p className="mt-4 text-center font-mono text-[11px] tracking-[0.25em] text-quantum-subtle uppercase">
-                grover_bell.py · backend: ibm_torino · shots: 1024
+                {t.hero.circuitCaption}
               </p>
             </div>
             {/* orbiting electron accents */}
@@ -357,13 +351,13 @@ export default function Hero() {
       {/* scroll indicator */}
       <motion.a
         href="#problem"
-        aria-label="Scroll to the problem section"
+        aria-label={t.hero.scrollAria}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.6, duration: 1 }}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 text-quantum-subtle hover:text-quantum-blue transition-colors"
       >
-        <span className="font-mono text-[10px] tracking-[0.35em] uppercase">Scroll</span>
+        <span className="font-mono text-[10px] tracking-[0.35em] uppercase">{t.hero.scroll}</span>
         <motion.span
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}

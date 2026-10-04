@@ -5,11 +5,11 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
 import Counter from "@/components/ui/Counter";
 import { FUNNEL_STAGES } from "@/lib/data";
+import { useLang } from "@/lib/LanguageProvider";
 import {
   fadeInLeft,
   fadeInRight,
   staggerContainer,
-  quantumVariants,
   viewport,
 } from "@/lib/animations";
 
@@ -19,17 +19,19 @@ import {
  * Bars animate in sequence; counters tick up on view.
  */
 export default function Problem() {
+  const { t, tx } = useLang();
+
   return (
-    <section id="problem" className="relative py-24 md:py-32" aria-label="The problem">
+    <section id="problem" className="relative py-24 md:py-32" aria-label={t.misc.problemAria}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="SECTION 01 — THE PROBLEM"
-          title="The Quantum Talent Pipeline Decoheres"
-          subtitle="Egypt graduates thousands of brilliant STEM students — and loses almost every one who touches quantum. Not for lack of talent. For lack of a lab."
+          eyebrow={t.problem.eyebrow}
+          title={t.problem.title}
+          subtitle={t.problem.subtitle}
         />
 
         <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-14 items-start">
-          {/* Funnel — slides in from the left */}
+          {/* Funnel — slides in from the reading-direction start */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -37,17 +39,17 @@ export default function Problem() {
             viewport={viewport}
             className="space-y-4"
             role="list"
-            aria-label="Talent funnel: from enrolled students to careers that stay in the region"
+            aria-label={t.problem.funnelAria}
           >
             {FUNNEL_STAGES.map((stage, i) => (
               <motion.div
-                key={stage.label}
+                key={stage.width}
                 variants={fadeInLeft}
                 role="listitem"
                 className="relative"
               >
                 <div
-                  className="group relative overflow-hidden rounded-xl border border-white/5 bg-quantum-secondary/60 px-5 py-4 md:px-6 md:py-5 transition-transform duration-300 hover:translate-x-1.5"
+                  className="group relative overflow-hidden rounded-xl border border-white/5 bg-quantum-secondary/60 px-5 py-4 md:px-6 md:py-5 transition-transform duration-300 hover:translate-x-1.5 rtl:hover:-translate-x-1.5"
                   style={{ width: `${stage.width}%`, minWidth: "240px" }}
                 >
                   {/* colored wash */}
@@ -58,7 +60,7 @@ export default function Problem() {
                   />
                   <span
                     aria-hidden="true"
-                    className="absolute left-0 inset-y-0 w-1"
+                    className="absolute start-0 inset-y-0 w-1"
                     style={{ background: stage.color, boxShadow: `0 0 14px ${stage.color}` }}
                   />
                   <div className="relative flex items-baseline gap-3 flex-wrap">
@@ -69,7 +71,7 @@ export default function Problem() {
                       <Counter value={stage.value} duration={1.6 + i * 0.15} />
                     </span>
                     <span className="text-sm md:text-base text-quantum-subtle">
-                      {stage.label}
+                      {tx(stage.label)}
                     </span>
                   </div>
                 </div>
@@ -80,12 +82,12 @@ export default function Problem() {
               variants={fadeInLeft}
               className="pt-4 font-heading text-xl md:text-2xl font-bold text-white"
             >
-              We measure the talent.{" "}
-              <span className="text-quantum-red">Then we lose it.</span>
+              {t.problem.punchPre}
+              <span className="text-quantum-red">{t.problem.punchAccent}</span>
             </motion.p>
           </motion.div>
 
-          {/* Right rail — stats + definition card (slides from right) */}
+          {/* Side rail — stats + definition card */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -96,12 +98,10 @@ export default function Problem() {
             <motion.div variants={fadeInRight}>
               <QuantumCard accent="#FFD166" noReveal className="p-6">
                 <p className="font-mono text-[11px] tracking-[0.3em] text-quantum-amber uppercase mb-3">
-                  decoherence (n.)
+                  {t.problem.decoTerm}
                 </p>
                 <p className="text-quantum-subtle leading-relaxed">
-                  — what destroys a quantum state before it can be measured.
-                  Also what happens to our best students between graduation and
-                  opportunity.
+                  {t.problem.decoBody}
                 </p>
               </QuantumCard>
             </motion.div>
@@ -116,8 +116,7 @@ export default function Problem() {
                   />
                 </div>
                 <p className="mt-2 text-sm text-quantum-subtle">
-                  growth in quantum job postings worldwide — the demand curve is
-                  vertical.
+                  {t.problem.stat300}
                 </p>
               </QuantumCard>
             </motion.div>
@@ -128,8 +127,7 @@ export default function Problem() {
                   0
                 </p>
                 <p className="mt-2 text-sm text-quantum-subtle">
-                  practical quantum labs in Egyptian universities. Zero. The
-                  first-mover seat is empty.
+                  {t.problem.stat0}
                 </p>
               </QuantumCard>
             </motion.div>
@@ -140,9 +138,8 @@ export default function Problem() {
                   2<sup className="text-xl md:text-2xl">300</sup>
                 </p>
                 <p className="mt-2 text-sm text-quantum-subtle">
-                  states representable by a 300-qubit machine — more than atoms
-                  in the observable universe.{" "}
-                  <span className="text-quantum-text">And our students have never touched one.</span>
+                  {t.problem.stat2300}
+                  <span className="text-quantum-text">{t.problem.stat2300Accent}</span>
                 </p>
               </QuantumCard>
             </motion.div>

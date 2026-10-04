@@ -258,3 +258,35 @@
     }
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  RTL / Arabic (|AR⟩) typography layer                                */
+/*  Cairo carries Arabic glyphs; Montserrat/Inter cover Latin.          */
+/*  Letter-spacing is disabled for Arabic — tracked-out Arabic text     */
+/*  breaks the joined script aesthetically.                             */
+/* ------------------------------------------------------------------ */
+html[dir="rtl"] body {
+  font-family: var(--font-cairo), var(--font-inter), ui-sans-serif, system-ui,
+    sans-serif;
+}
+html[dir="rtl"] .font-heading {
+  font-family: var(--font-cairo), var(--font-montserrat), ui-sans-serif,
+    system-ui, sans-serif;
+}
+/* Neutralize wide tracking utilities when the copy is Arabic.
+   [class*="tracking-"] matches arbitrary-value utilities without escaping. */
+html[dir="rtl"] [class*="tracking-"] {
+  letter-spacing: 0.01em !important;
+}
+/* Slightly larger line-height for Arabic script legibility */
+html[dir="rtl"] body {
+  line-height: 1.75;
+}
+/* The headline gradient sweep stays physical; keep glow balanced */
+html[dir="rtl"] .text-glow-cyan,
+html[dir="rtl"] .text-glow-green {
+  text-shadow:
+    0 0 18px rgba(0, 217, 255, 0.45),
+    0 0 60px rgba(0, 217, 255, 0.18);
+}
+

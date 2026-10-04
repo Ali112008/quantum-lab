@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronDown, Zap } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { PHASES } from "@/lib/data";
+import { useLang } from "@/lib/LanguageProvider";
 import { quantumVariants, viewport, staggerContainer, fadeInLeft } from "@/lib/animations";
 
 /**
@@ -15,16 +16,17 @@ import { quantumVariants, viewport, staggerContainer, fadeInLeft } from "@/lib/a
  */
 export default function Methodology() {
   const [active, setActive] = useState<number>(1);
+  const { t, tx } = useLang();
 
   return (
-    <section id="methodology" className="relative py-24 md:py-32" aria-label="Methodology">
+    <section id="methodology" className="relative py-24 md:py-32" aria-label={t.misc.methodologyAria}>
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-quantum-purple/30 to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="SECTION 03 — THE CIRCUIT"
-          title="The Three-Year Circuit"
-          subtitle="Each phase output is the next phase input — the phases are entangled. Click any phase to collapse the wavefunction."
+          eyebrow={t.methodology.eyebrow}
+          title={t.methodology.title}
+          subtitle={t.methodology.subtitle}
         />
 
         {/* timeline rail */}
@@ -53,7 +55,7 @@ export default function Methodology() {
                     onClick={() => setActive(phase.id)}
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.92 }}
-                    aria-label={`Focus phase ${phase.id}: ${phase.name}`}
+                    aria-label={t.methodology.phaseAria(phase.id, tx(phase.name))}
                     className={`relative z-10 flex size-12 md:size-14 items-center justify-center rounded-full border-2 font-heading font-extrabold transition-all ${
                       isActive
                         ? "bg-quantum-navy text-white animate-pulse-glow"
@@ -62,14 +64,14 @@ export default function Methodology() {
                     style={{ borderColor: phase.color }}
                   >
                     <Zap className="size-5" style={{ color: phase.color }} aria-hidden="true" />
-                    <span className="sr-only">{phase.name}</span>
+                    <span className="sr-only">{tx(phase.name)}</span>
                   </motion.button>
                   <span
                     className={`font-mono text-[10px] md:text-xs tracking-widest transition-colors ${
                       isActive ? "text-white" : "text-quantum-subtle"
                     }`}
                   >
-                    {phase.months.replace("Months", "M")}
+                    {tx(phase.monthsShort)}
                   </span>
                 </li>
               );
@@ -105,17 +107,17 @@ export default function Methodology() {
                 <button
                   type="button"
                   onClick={() => setActive(phase.id)}
-                  className="flex w-full items-center justify-between gap-4 px-6 pt-6 pb-4 text-left"
+                  className="flex w-full items-center justify-between gap-4 px-6 pt-6 pb-4 text-start"
                   aria-controls={`phase-panel-${phase.id}`}
                 >
                   <div>
                     <p className="font-mono text-[11px] tracking-[0.3em] uppercase" style={{ color: phase.color }}>
-                      |Phase {phase.id}⟩ · {phase.months}
+                      {t.methodology.phaseBraKet(phase.id)} · {tx(phase.months)}
                     </p>
                     <h3 className="mt-2 font-heading text-xl md:text-2xl font-extrabold text-white">
-                      {phase.name}
+                      {tx(phase.name)}
                       <span className="block text-sm font-semibold text-quantum-subtle mt-0.5">
-                        {phase.title}
+                        {tx(phase.title)}
                       </span>
                     </h3>
                   </div>
@@ -140,19 +142,19 @@ export default function Methodology() {
                       className="overflow-hidden"
                     >
                       <div className="px-6 pb-6">
-                        <p className="text-sm italic text-quantum-subtle border-l-2 pl-3" style={{ borderColor: phase.color }}>
-                          {phase.tagline}
+                        <p className="text-sm italic text-quantum-subtle border-s-2 ps-3" style={{ borderColor: phase.color }}>
+                          {tx(phase.tagline)}
                         </p>
 
-                        <ul className="mt-4 space-y-2.5" aria-label={`Phase ${phase.id} activities`}>
-                          {phase.activities.map((activity) => (
-                            <li key={activity} className="flex items-start gap-2.5 text-sm text-quantum-text/90">
+                        <ul className="mt-4 space-y-2.5" aria-label={t.methodology.activitiesAria(phase.id)}>
+                          {phase.activities.map((activity, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-sm text-quantum-text/90">
                               <Check
-                                className="mt-0.5 size-4 shrink-0"
+                                className="mt-0.5 size-4 shrink-0 rtl:-scale-x-100"
                                 style={{ color: phase.color }}
                                 aria-hidden="true"
                               />
-                              {activity}
+                              {tx(activity)}
                             </li>
                           ))}
                         </ul>
@@ -160,16 +162,16 @@ export default function Methodology() {
                         {/* exit criteria */}
                         <div className="mt-5 rounded-xl border border-white/5 bg-quantum-navy/60 p-4">
                           <p className="font-mono text-[10px] tracking-[0.3em] uppercase text-quantum-subtle mb-3">
-                            Phase {phase.id} exit criteria
+                            {t.methodology.exitCriteria(phase.id)}
                           </p>
                           <div className="flex gap-6">
-                            {phase.milestones.map((m) => (
-                              <div key={m.label}>
+                            {phase.milestones.map((m, i) => (
+                              <div key={i}>
                                 <p className="font-heading text-2xl font-extrabold" style={{ color: phase.color }}>
                                   {m.value}
                                 </p>
-                                <p className="mt-0.5 text-[11px] leading-tight text-quantum-subtle max-w-[90px]">
-                                  {m.label}
+                                <p className="mt-0.5 text-[11px] leading-tight text-quantum-subtle max-w-[110px]">
+                                  {tx(m.label)}
                                 </p>
                               </div>
                             ))}
@@ -183,12 +185,12 @@ export default function Methodology() {
                 {/* collapsed summary */}
                 {!isOpen && (
                   <div className="px-6 pb-6">
-                    <p className="text-sm text-quantum-subtle line-clamp-2">{phase.tagline}</p>
+                    <p className="text-sm text-quantum-subtle line-clamp-2">{tx(phase.tagline)}</p>
                     <div className="mt-3 flex gap-5">
-                      {phase.milestones.map((m) => (
-                        <p key={m.label} className="text-xs text-quantum-subtle">
+                      {phase.milestones.map((m, i) => (
+                        <p key={i} className="text-xs text-quantum-subtle">
                           <span className="font-heading font-bold text-white">{m.value}</span>{" "}
-                          {m.label}
+                          {tx(m.label)}
                         </p>
                       ))}
                     </div>
@@ -206,7 +208,7 @@ export default function Methodology() {
           viewport={viewport}
           className="mt-10 text-center font-mono text-xs md:text-sm text-quantum-subtle italic"
         >
-          “each phase output is the next phase input — the phases are entangled”
+          {t.methodology.quote}
         </motion.p>
       </div>
     </section>

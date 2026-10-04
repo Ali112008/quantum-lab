@@ -1,25 +1,35 @@
-const TICKER_ITEMS = [
-  "|ψ⟩ = α|0⟩ + β|1⟩",
-  "SUPERPOSITION",
-  "IBM QUANTUM CHALLENGE — TOP 5% GLOBAL",
-  "ENTANGLEMENT",
-  "QISKIT CERTIFIED — 40 SEATS",
-  "DECOHERENCE",
-  "$1 → $100 BY 2036",
-  "200 CAREERS LAUNCHED",
-  "VQE · QAOA · QML",
-  "NATIONAL HACKATHON — 1ST PLACE",
-  "2 PEER-REVIEWED PAPERS",
-  "MEASURE THE TALENT",
+"use client";
+
+import { useLang } from "@/lib/LanguageProvider";
+import { l, type L10n } from "@/lib/i18n";
+
+const TICKER_ITEMS: L10n[] = [
+  l("|ψ⟩ = α|0⟩ + β|1⟩", "|ψ⟩ = α|0⟩ + β|1⟩"),
+  l("SUPERPOSITION", "تراكب كمومي"),
+  l("IBM QUANTUM CHALLENGE — TOP 5% GLOBAL", "تحدي IBM الكمومي — الأفضل 5% عالميًا"),
+  l("ENTANGLEMENT", "تشابك كمومي"),
+  l("QISKIT CERTIFIED — 40 SEATS", "شهادات Qiskit — 40 مقعدًا"),
+  l("DECOHERENCE", "فقدان التماسك"),
+  l("$1 → $100 BY 2036", "$1 → $100 بحلول 2036"),
+  l("200 CAREERS LAUNCHED", "200 مسيرة مهنية تُطلق"),
+  l("VQE · QAOA · QML", "VQE · QAOA · QML"),
+  l("NATIONAL HACKATHON — 1ST PLACE", "هاكاثون وطني — المركز الأول"),
+  l("2 PEER-REVIEWED PAPERS", "ورقتان بحثيتان محكّمتان"),
+  l("MEASURE THE TALENT", "قِس الموهبة"),
 ];
 
 /**
  * Continuous marquee of quantum vocabulary + lab achievements.
- * Rendered twice for a seamless CSS-only loop.
+ * Rendered twice for a seamless CSS-only loop. The strip itself is forced
+ * LTR so the translateX marquee physics stay identical in both languages
+ * (Arabic items still render RTL inside each pill).
  */
 export default function QuantumTicker() {
+  const { tx } = useLang();
+
   return (
     <div
+      dir="ltr"
       aria-hidden="true"
       className="relative z-10 overflow-hidden border-y border-quantum-blue/15 bg-quantum-deep/70 py-3 backdrop-blur-sm select-none"
     >
@@ -30,11 +40,11 @@ export default function QuantumTicker() {
           <ul key={copy} className="flex shrink-0 items-center gap-10" aria-hidden={copy === 1}>
             {TICKER_ITEMS.map((item) => (
               <li
-                key={`${copy}-${item}`}
+                key={`${copy}-${item.en}`}
                 className="flex items-center gap-10 whitespace-nowrap font-mono text-[11px] md:text-xs tracking-[0.25em] text-quantum-subtle"
               >
                 <span className="text-quantum-blue/70">◆</span>
-                {item}
+                {tx(item)}
               </li>
             ))}
           </ul>

@@ -12,10 +12,11 @@ import Footer from "@/components/Footer";
 import QuantumBackground from "@/components/ui/QuantumBackground";
 import QuantumTicker from "@/components/QuantumTicker";
 import ScrollToTop from "@/components/ScrollToTop";
+import SectionDivider from "@/components/ui/SectionDivider";
 
 /**
  * Single-page landing for the University Quantum Research Lab.
- * One wavefunction, eleven sections, smooth scroll.
+ * One wavefunction, eleven sections, smooth scroll — EN ⟷ AR.
  */
 export default function Home() {
   return (
@@ -30,11 +31,15 @@ export default function Home() {
         <QuantumTicker />
         <Problem />
         <Solution />
+        <SectionDivider accent="#6C5CE7" />
         <Methodology />
+        <SectionDivider accent="#00B894" echo="#00D9FF" />
         <BudgetCalculator />
         <Scoreboard />
+        <SectionDivider accent="#FFD166" echo="#00D9FF" />
         <Team />
         <FAQ />
+        <SectionDivider accent="#00D9FF" echo="#00B894" />
         <ContactSection />
       </main>
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { TEAM_MEMBERS, LAB_EMAIL, type TeamGroup } from "@/lib/data";
+import { useLang } from "@/lib/LanguageProvider";
 import { staggerContainer, scaleIn, quantumVariants, viewport } from "@/lib/animations";
 
 /** Initials for the avatar halo — bra-ket placeholders keep their glyph */
@@ -18,15 +19,9 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-const FILTERS: { id: TeamGroup | "all"; label: string }[] = [
-  { id: "all", label: "All 15" },
-  { id: "leads", label: "Leads" },
-  { id: "research", label: "Research" },
-  { id: "tech", label: "Tech" },
-  { id: "ops", label: "Ops & Events" },
-  { id: "media", label: "Media & Design" },
-  { id: "open", label: "Open Seats" },
-];
+type FilterId = TeamGroup | "all";
+
+const FILTER_IDS: FilterId[] = ["all", "leads", "research", "tech", "ops", "media", "open"];
 
 /**
  * SECTION 06 — THE TEAM
@@ -34,7 +29,8 @@ const FILTERS: { id: TeamGroup | "all"; label: string }[] = [
  * Filterable by discipline, animated re-flow on change.
  */
 export default function Team() {
-  const [filter, setFilter] = useState<TeamGroup | "all">("all");
+  const [filter, setFilter] = useState<FilterId>("all");
+  const { t, tx } = useLang();
 
   const members = useMemo(
     () =>
@@ -45,14 +41,14 @@ export default function Team() {
   );
 
   return (
-    <section id="team" className="relative py-24 md:py-32" aria-label="The team">
+    <section id="team" className="relative py-24 md:py-32" aria-label={t.misc.teamAria}>
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-quantum-purple/30 to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="SECTION 06 — THE TEAM"
-          title="Entangled Expertise"
-          subtitle="15 students, one wavefunction — physicists, engineers, and mathematicians led by the people who will do the work: the students themselves."
+          eyebrow={t.team.eyebrow}
+          title={t.team.title}
+          subtitle={t.team.subtitle}
         />
 
         {/* discipline filter */}
@@ -63,17 +59,17 @@ export default function Team() {
           viewport={viewport}
           className="mb-10 flex flex-wrap justify-center gap-2"
           role="group"
-          aria-label="Filter team members by discipline"
+          aria-label={t.team.filtersAria}
         >
-          {FILTERS.map((f) => {
-            const active = filter === f.id;
+          {FILTER_IDS.map((id) => {
+            const active = filter === id;
             return (
               <motion.button
-                key={f.id}
+                key={id}
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setFilter(f.id)}
+                onClick={() => setFilter(id)}
                 aria-pressed={active}
                 className={`rounded-full border px-4 py-2 font-mono text-xs tracking-wider transition-all ${
                   active
@@ -81,7 +77,7 @@ export default function Team() {
                     : "border-white/10 bg-quantum-secondary/60 text-quantum-subtle hover:border-quantum-blue/40 hover:text-white"
                 }`}
               >
-                {f.label}
+                {t.team.filters[id]}
               </motion.button>
             );
           })}
@@ -95,14 +91,14 @@ export default function Team() {
           viewport={viewport}
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5"
           role="list"
-          aria-label="Team members"
+          aria-label={t.team.gridAria}
           aria-live="polite"
         >
           <AnimatePresence mode="popLayout">
             {members.map((member) => (
               <motion.article
                 layout
-                key={member.name + member.role}
+                key={member.name}
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
@@ -131,22 +127,22 @@ export default function Team() {
                   )}
                 </div>
 
-                <h3 className="font-heading text-sm font-bold text-white leading-snug">
+                <h3 className="font-heading text-sm font-bold text-white leading-snug" dir="ltr">
                   {member.name}
                 </h3>
                 <p className="mt-1 text-xs font-semibold text-quantum-blue">
-                  {member.role}
+                  {tx(member.role)}
                 </p>
-                <p className="mt-0.5 text-[11px] text-quantum-subtle">{member.year}</p>
+                <p className="mt-0.5 text-[11px] text-quantum-subtle">{tx(member.year)}</p>
 
                 {/* skills — reveal on hover */}
                 <div className="mt-3 flex max-h-0 flex-wrap justify-center gap-1.5 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-24 group-hover:opacity-100">
-                  {member.skills.map((skill) => (
+                  {member.skills.map((skill, i) => (
                     <span
-                      key={skill}
+                      key={i}
                       className="rounded-full border border-quantum-blue/25 bg-quantum-navy/70 px-2 py-0.5 font-mono text-[10px] text-quantum-blue/90"
                     >
-                      {skill}
+                      {tx(skill)}
                     </span>
                   ))}
                 </div>
@@ -162,7 +158,7 @@ export default function Team() {
           viewport={viewport}
           className="mt-8 text-center font-mono text-xs text-quantum-subtle"
         >
-          one entangled system — full roster & photos available on request
+          {t.team.note}
         </motion.p>
 
         <motion.div
@@ -179,7 +175,7 @@ export default function Team() {
             className="inline-flex items-center gap-2 rounded-xl border border-quantum-purple/50 bg-quantum-purple/10 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-quantum-purple/25 hover:shadow-[0_0_26px_rgba(108,92,231,0.45)]"
           >
             <Mail className="size-4" aria-hidden="true" />
-            Claim an open founding seat
+            {t.team.cta}
           </motion.a>
         </motion.div>
       </div>

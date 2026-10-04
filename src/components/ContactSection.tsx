@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,38 +21,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { quantumVariants, viewport } from "@/lib/animations";
+import { useLang } from "@/lib/LanguageProvider";
 
 /**
- * SECTION 07 — MAKE CONTACT
+ * SECTION 08 — MAKE CONTACT
  * A fullstack form: signals POST to /api/inquiries (Prisma + SQLite),
  * and a live counter shows how many "measurements" have collapsed so far.
+ * Validation messages re-bind per language — the schema is rebuilt on toggle.
  */
-
-const formSchema = z.object({
-  name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
-  org: z.string().trim().max(120).optional().or(z.literal("")),
-  email: z.string().trim().email("Please enter a valid email address"),
-  interest: z.enum(["funding", "partnership", "join", "other"]),
-  message: z
-    .string()
-    .trim()
-    .min(10, "Tell us a little more — at least 10 characters")
-    .max(2000),
-  /** Honeypot — hidden from humans; must stay empty. */
-  website: z.string().max(0).optional().or(z.literal("")),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const INTEREST_OPTIONS = [
-  { value: "funding", label: "Seed Funding ($50K)" },
-  { value: "partnership", label: "Industry Partnership" },
-  { value: "join", label: "Join the Team (|0⟩ / |1⟩)" },
-  { value: "other", label: "Something Else" },
-] as const;
 
 function SignalCounter() {
   const [total, setTotal] = useState<number | null>(null);
+  const { t } = useLang();
 
   useEffect(() => {
     let cancelled = false;
@@ -82,9 +62,7 @@ function SignalCounter() {
         <span className="relative inline-flex size-2.5 rounded-full bg-quantum-green" />
       </motion.span>
       <span className="font-mono text-xs tracking-wider text-quantum-green">
-        {total === null
-          ? "SIGNAL SCANNING…"
-          : `${total} SIGNAL${total === 1 ? "" : "S"} RECEIVED — YOU'D BE MEASUREMENT #${total + 1}`}
+        {total === null ? t.contact.counterScanning : t.contact.counter(total)}
       </span>
     </div>
   );
@@ -92,7 +70,29 @@ function SignalCounter() {
 
 export default function ContactSection() {
   const { toast } = useToast();
+  const { t, lang } = useLang();
   const [submitted, setSubmitted] = useState(false);
+
+  // Schema rebuilt per language so validation errors speak the page language.
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(2, t.contact.zodName).max(80),
+        org: z.string().trim().max(120).optional().or(z.literal("")),
+        email: z.string().trim().email(t.contact.zodEmail),
+        interest: z.enum(["funding", "partnership", "join", "other"]),
+        message: z
+          .string()
+          .trim()
+          .min(10, t.contact.zodMessage)
+          .max(2000),
+        /** Honeypot — hidden from humans; must stay empty. */
+        website: z.string().max(0).optional().or(z.literal("")),
+      }),
+    [t]
+  );
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const {
     register,
@@ -125,35 +125,36 @@ export default function ContactSection() {
       const data: { ok: boolean; error?: string } = await res.json();
 
       if (!res.ok || !data.ok) {
-        throw new Error(data.error ?? "Transmission failed");
+        // Server messages are English — localize the common rate-limit case.
+        throw new Error(
+          res.status === 429 ? t.contact.rateLimited : data.error ?? t.contact.toastErrorDesc
+        );
       }
 
       setSubmitted(true);
       reset();
       toast({
-        title: "Signal received ✅",
-        description:
-          "Your measurement collapsed into an email in our inbox — we reply within 48 hours.",
+        title: t.contact.toastTitle,
+        description: t.contact.toastDesc,
       });
     } catch (err) {
       toast({
-        title: "Decoherence detected",
-        description:
-          err instanceof Error ? err.message : "Please try again in a moment.",
+        title: t.contact.toastErrorTitle,
+        description: err instanceof Error ? err.message : t.contact.toastErrorDesc,
         variant: "destructive",
       });
     }
   };
 
   return (
-    <section id="contact" className="relative py-24 md:py-32" aria-label="Contact the lab">
+    <section id="contact" className="relative py-24 md:py-32" aria-label={t.misc.contactAria}>
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-quantum-blue/30 to-transparent" />
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="SECTION 08 — MAKE CONTACT"
-          title="Collapse the Wavefunction"
-          subtitle="Every partnership starts as a signal. Send yours — funding, industry pilots, or one of the two open founding seats."
+          eyebrow={t.contact.eyebrow}
+          title={t.contact.title}
+          subtitle={t.contact.subtitle}
         />
 
         <SignalCounter />
@@ -183,11 +184,10 @@ export default function ContactSection() {
                     <CheckCircle2 className="size-10 text-quantum-green" aria-hidden="true" />
                   </motion.span>
                   <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-white">
-                    Signal Received
+                    {t.contact.successTitle}
                   </h3>
                   <p className="mt-3 max-w-md text-quantum-subtle">
-                    Your inquiry collapsed into a row in our lab database. A
-                    human (a real one, we checked) will reply within 48 hours.
+                    {t.contact.successBody}
                   </p>
                   <Button
                     type="button"
@@ -195,7 +195,7 @@ export default function ContactSection() {
                     variant="outline"
                     className="mt-7 border-quantum-blue/50 bg-transparent text-quantum-blue hover:bg-quantum-blue/10 hover:text-quantum-blue"
                   >
-                    Send another signal
+                    {t.contact.successBtn}
                   </Button>
                 </motion.div>
               ) : (
@@ -207,16 +207,16 @@ export default function ContactSection() {
                   onSubmit={handleSubmit(onSubmit)}
                   noValidate
                   className="grid gap-5 md:grid-cols-2"
-                  aria-label="Partnership inquiry form"
+                  aria-label={t.contact.subtitle}
                 >
                   {/* Name */}
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-quantum-text">
-                      Name <span className="text-quantum-red">*</span>
+                      {t.contact.name} <span className="text-quantum-red">*</span>
                     </Label>
                     <Input
                       id="name"
-                      placeholder="Dr. Ahmed Hassan"
+                      placeholder={t.contact.namePh}
                       aria-invalid={!!errors.name}
                       className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
                       {...register("name")}
@@ -229,12 +229,13 @@ export default function ContactSection() {
                   {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-quantum-text">
-                      Email <span className="text-quantum-red">*</span>
+                      {t.contact.email} <span className="text-quantum-red">*</span>
                     </Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@agency.org"
+                      dir="ltr"
+                      placeholder={t.contact.emailPh}
                       aria-invalid={!!errors.email}
                       className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
                       {...register("email")}
@@ -247,12 +248,12 @@ export default function ContactSection() {
                   {/* Organization */}
                   <div className="space-y-2">
                     <Label htmlFor="org" className="text-quantum-text">
-                      Organization{" "}
-                      <span className="text-quantum-subtle text-xs">(optional)</span>
+                      {t.contact.org}{" "}
+                      <span className="text-quantum-subtle text-xs">{t.contact.orgOptional}</span>
                     </Label>
                     <Input
                       id="org"
-                      placeholder="ASRT · ITIDA · IBM · …"
+                      placeholder={t.contact.orgPh}
                       className="bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
                       {...register("org")}
                     />
@@ -261,7 +262,7 @@ export default function ContactSection() {
                   {/* Interest */}
                   <div className="space-y-2">
                     <Label htmlFor="interest" className="text-quantum-text">
-                      I'm interested in
+                      {t.contact.interest}
                     </Label>
                     <input type="hidden" {...register("interest")} />
                     <Select
@@ -276,10 +277,10 @@ export default function ContactSection() {
                         id="interest"
                         className="w-full bg-quantum-navy/60 border-white/10 data-[placeholder]:text-quantum-subtle"
                       >
-                        <SelectValue placeholder="Choose a channel" />
+                        <SelectValue placeholder={t.contact.interestPh} />
                       </SelectTrigger>
                       <SelectContent className="bg-quantum-secondary border-quantum-blue/20">
-                        {INTEREST_OPTIONS.map((opt) => (
+                        {t.contact.interestOptions.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
@@ -291,12 +292,12 @@ export default function ContactSection() {
                   {/* Message */}
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="message" className="text-quantum-text">
-                      Message <span className="text-quantum-red">*</span>
+                      {t.contact.message} <span className="text-quantum-red">*</span>
                     </Label>
                     <Textarea
                       id="message"
                       rows={5}
-                      placeholder="Tell us how you'd like to entangle with the lab…"
+                      placeholder={t.contact.messagePh}
                       aria-invalid={!!errors.message}
                       className="resize-none bg-quantum-navy/60 border-white/10 focus-visible:ring-quantum-blue/60"
                       {...register("message")}
@@ -309,7 +310,7 @@ export default function ContactSection() {
                       ) : (
                         <p className="text-xs text-quantum-subtle flex items-center gap-1.5">
                           <Radio className="size-3" aria-hidden="true" />
-                          Encrypted in transit · stored in our lab database only
+                          {t.contact.privacy}
                         </p>
                       )}
                       <span className="font-mono text-[10px] text-quantum-subtle tabular-nums">
@@ -319,10 +320,10 @@ export default function ContactSection() {
                   </div>
 
                   <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                    {/* Honeypot: invisible to humans & screen readers, in the
-                        tab order of no one. Bots that fill it are silently dropped. */}
+                    {/* Honeypot: invisible to humans & screen readers.
+                        Bots that fill it are silently dropped. */}
                     <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
-                      <label htmlFor="website">Leave this field empty</label>
+                      <label htmlFor="website">{t.contact.honeypotLabel}</label>
                       <input
                         id="website"
                         type="text"
@@ -333,7 +334,7 @@ export default function ContactSection() {
                     </div>
                     <p className="font-mono text-[11px] text-quantum-subtle flex items-center gap-2">
                       <Activity className="size-3.5 text-quantum-green" aria-hidden="true" />
-                      avg. response time: 48h
+                      {t.contact.responseTime}
                     </p>
                     <Button
                       type="submit"
@@ -343,12 +344,12 @@ export default function ContactSection() {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                          Transmitting…
+                          {t.contact.submitting}
                         </>
                       ) : (
                         <>
-                          <Send className="size-4" aria-hidden="true" />
-                          Transmit Signal
+                          <Send className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+                          {t.contact.submit}
                         </>
                       )}
                     </Button>

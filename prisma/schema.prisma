@@ -36,3 +36,11 @@ model Inquiry {
   message   String
   createdAt DateTime @default(now())
 }
+
+/// Newsletter subscribers — qubits that chose to stay entangled
+/// with the lab's monthly progress signal.
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
