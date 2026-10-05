@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FAQ_ITEMS, LAB_EMAIL, PROPOSAL_PDFS } from "@/lib/data";
+import { FAQ_ITEMS, PROPOSAL_PDFS } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { staggerContainer, quantumVariants, viewport } from "@/lib/animations";
 
@@ -60,7 +60,7 @@ export default function FAQ() {
                 <span className="text-quantum-green">{t.faq.guaranteeAccent}</span>.
               </p>
               <a
-                href={`mailto:${LAB_EMAIL}?subject=Question%20about%20the%20%2450K%20seed`}
+                href="#contact"
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-quantum-blue transition-all hover:gap-2.5 hover:text-quantum-blue"
               >
                 {t.faq.askDirect}

@@ -111,7 +111,6 @@ const jsonLd = {
   alternateName: "Quantum Research Lab",
   description:
     "Student-led, faculty-mentored quantum research laboratory. Seeking $50,000 seed funding for a 3-year plan: Foundation, Operations, Sustainability.",
-  email: "quantum.lab@university.edu.eg",
   funder: {
     "@type": "Organization",
     name: "Seed Investment Partners",

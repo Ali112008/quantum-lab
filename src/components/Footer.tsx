@@ -7,7 +7,6 @@ import {
   Linkedin,
   Twitter,
   Github,
-  Mail,
   Handshake,
   FileText,
   Eye,
@@ -16,7 +15,7 @@ import {
   Loader2,
   Waves,
 } from "lucide-react";
-import { LAB_EMAIL, PROPOSAL_PDFS } from "@/lib/data";
+import { PROPOSAL_PDFS } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -191,22 +190,22 @@ export default function Footer() {
 
           <motion.div variants={scaleIn} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <motion.a
-              href={`mailto:${LAB_EMAIL}?subject=Seed%20Funding%20—%20Quantum%20Research%20Lab`}
+              href="#budget"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 rounded-xl bg-quantum-blue px-7 py-4 font-heading font-bold text-quantum-navy transition-colors hover:bg-[#33e1ff]"
             >
-              <Mail className="size-4" aria-hidden="true" />
-              {LAB_EMAIL}
+              <Handshake className="size-4" aria-hidden="true" />
+              {t.footer.reviewTerms}
             </motion.a>
             <motion.a
-              href="#budget"
+              href="#contact"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-2 rounded-xl border border-quantum-blue/40 bg-quantum-secondary/60 px-7 py-4 font-heading font-bold text-white transition-all hover:border-quantum-blue hover:shadow-[0_0_26px_rgba(0,217,255,0.35)]"
             >
-              <Handshake className="size-4" aria-hidden="true" />
-              {t.footer.reviewTerms}
+              <Send className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+              {t.nav.contact}
             </motion.a>
             <motion.a
               href={PROPOSAL_PDFS[lang].href}

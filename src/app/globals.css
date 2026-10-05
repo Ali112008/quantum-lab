@@ -343,7 +343,7 @@ button:focus-visible:not([class~="focus-visible:ring-2"]):not([class~="focus-vis
     display: none !important;
   }
 
-  /* Forms are web-native — paper readers get the QR + email instead.
+  /* Forms are web-native — paper readers get the downloadable one-pager instead.
      aria-hidden covers every purely decorative glow/ket/ghost too. */
   form,
   [aria-hidden="true"] {

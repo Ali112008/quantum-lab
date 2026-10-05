@@ -297,8 +297,6 @@ export interface Copy {
     tiersNote: string;
     tiersCta: string;
     tiersFeaturedBadge: string;
-    qrTitle: string;
-    qrCaption: string;
     /** Share-the-page module (AMPLIFY THE SIGNAL): native share, copy, X, LinkedIn, WhatsApp. */
     shareEyebrow: string;
     shareAria: string;
@@ -347,7 +345,6 @@ export interface Copy {
     pledgeToastTitle: string;
     pledgeToastDesc: string;
     pledgeToastErrorTitle: string;
-    tierPledgeCta: string;
     name: string;
     namePh: string;
     email: string;
@@ -767,12 +764,12 @@ const en: Copy = {
       "Every funder asks the same eight questions. We'd rather collapse the uncertainty here than in a meeting — read on, then bring the hard ones.",
     guaranteeTag: "<GUARANTEE />",
     guaranteeBody:
-      "If any answer above feels hand-wavy, email us and we'll send the spreadsheet behind it — ",
+      "If any answer above feels hand-wavy, ask us through the contact form and we'll send the spreadsheet behind it — ",
     guaranteeAccent: "quarterly, signed, and open",
     askDirect: "Ask a question directly",
     pdfPre: "Prefer paper? ",
     pdfAccent: "Download the one-page PDF",
-    pdfMeta: "A4 · 276KB",
+    pdfMeta: "A4 · 255KB",
     observed: (n) =>
       `OBSERVED: ${n} QUESTIONS · SUPERPOSITION INTACT: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
   },
@@ -817,8 +814,7 @@ const en: Copy = {
     tiersNote: "Every tier includes the quarterly transparency reports. Custom instruments (equipment, endowments) welcome.",
     tiersCta: "Claim this tier",
     tiersFeaturedBadge: "THE ASK",
-    qrTitle: "PREFER TO SCAN?",
-    qrCaption: "Point your camera — a draft email to the lab opens instantly.",
+    shareEyebrow: "AMPLIFY THE SIGNAL",
     shareEyebrow: "AMPLIFY THE SIGNAL",
     shareAria: "Share this proposal",
     shareText:
@@ -877,7 +873,6 @@ const en: Copy = {
     pledgeToastTitle: "Pledge recorded ✅",
     pledgeToastDesc: "Your intent is pending confirmation — we'll reach out to verify.",
     pledgeToastErrorTitle: "Decoherence detected",
-    tierPledgeCta: "Pledge online",
     name: "Name",
     namePh: "Dr. Ahmed Hassan",
     email: "Email",
@@ -906,7 +901,7 @@ const en: Copy = {
     successBtn: "Send another signal",
     toastTitle: "Signal received ✅",
     toastDesc:
-      "Your measurement collapsed into an email in our inbox — we reply within 48 hours.",
+      "Your signal reached the lab — we reply within 48 hours.",
     toastErrorTitle: "Decoherence detected",
     toastErrorDesc: "Please try again in a moment.",
     rateLimited:
@@ -1312,12 +1307,12 @@ const ar: Copy = {
       "كل مموّل يسأل الأسئلة الثمانية نفسها. نفضّل إنهاء حالة عدم اليقين هنا بدلًا من الاجتماع — اقرأ، ثم أحضر الأسئلة الأصعب.",
     guaranteeTag: "<GUARANTEE />",
     guaranteeBody:
-      "إذا بدا أي سؤال أعلاه عامًا، راسلنا وسنرسل لك جدول البيانات وراءه — ",
+      "إذا بدا أي سؤال أعلاه عامًا، اسألنا عبر نموذج التواصل وسنرسل لك جدول البيانات وراءه — ",
     guaranteeAccent: "فصليًا، موقَّعًا، ومفتوحًا",
     askDirect: "اسأل سؤالًا مباشرة",
     pdfPre: "تفضّل الورق؟ ",
     pdfAccent: "نزّل الملخص من صفحة واحدة",
-    pdfMeta: "A4 · 681KB",
+    pdfMeta: "A4 · 668KB",
     observed: (n) =>
       `تمت الملاحظة: ${n} أسئلة · التراكب سليم: |FAQ⟩ = Σ qᵢ |aᵢ⟩`,
   },
@@ -1382,8 +1377,6 @@ const ar: Copy = {
     tiersNote: "كل المستويات تشمل تقارير الشفافية الفصلية. نرحّب بالعتاد والوقفيات المخصصة.",
     tiersCta: "احجز هذا المستوى",
     tiersFeaturedBadge: "المطلوب",
-    qrTitle: "تفضّل المسح؟",
-    qrCaption: "وجّه كاميرتك — يُفتح مسودة بريد إلى المختبر فورًا.",
     shareEyebrow: "ضخّم الإشارة",
     shareAria: "شارك هذا العرض",
     shareText:
@@ -1444,7 +1437,6 @@ const ar: Copy = {
     pledgeToastTitle: "تم تسجيل التعهُّد ✅",
     pledgeToastDesc: "نيّتك بانتظار التأكيد — سنتواصل معك للتحقق.",
     pledgeToastErrorTitle: "رصدنا فقدان تماسك",
-    tierPledgeCta: "تعهَّد عبر الموقع",
     message: "الرسالة",
     messagePh: "أخبرنا كيف تودّ التشابك مع المختبر…",
     privacy: "مشفَّرة أثناء النقل · تُخزَّن في قاعدة بيانات مختبرنا فقط",
@@ -1457,7 +1449,7 @@ const ar: Copy = {
       "انهار استفسارك في صفّ بقاعدة بيانات مختبرنا. سيردّ عليك إنسان (حقيقي، تحققنا) خلال 48 ساعة.",
     successBtn: "أرسل إشارة أخرى",
     toastTitle: "وصلت الإشارة ✅",
-    toastDesc: "تحوّلت رسالتك إلى بريد في صندوقنا — نرد خلال 48 ساعة.",
+    toastDesc: "وصلت إشارتك إلى المختبر — نرد خلال 48 ساعة.",
     toastErrorTitle: "رصدنا فقدان تماسك",
     toastErrorDesc: "حاول مرة أخرى بعد لحظات.",
     rateLimited:

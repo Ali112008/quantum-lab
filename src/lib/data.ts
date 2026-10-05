@@ -474,8 +474,6 @@ export const YEAR3_OUTCOMES = [
   { value: 1, label: l("regional quantum hub — named after you", "مركز كمومي إقليمي — يحمل اسمك"), color: "#00B894" },
 ] as const;
 
-export const LAB_EMAIL = "quantum.lab@university.edu.eg";
-
 /** Downloadable one-page PDF proposals (print-ready A4, matches site branding). */
 export const PROPOSAL_PDFS = {
   en: { href: "/proposal/quantum-lab-one-pager.pdf", download: "QRL-Lab-Seed-Proposal.pdf" },
@@ -546,7 +544,7 @@ export const FAQ_ITEMS = [
     ),
     a: l(
       "Yes. The interactive budget calculator above lets you 'ignite' a partial amount — a $10K seed still trains 40 students on real hardware. Smaller seed, smaller lab, same physics. Reach out and we'll structure it.",
-      "نعم. حاسبة الميزانية التفاعلية أعلاه تتيح لك «إشعال» مبلغ جزئي — حتى 10,000 دولار تدرّب 40 طالبًا على عتاد حقيقي. بذرة أصغر، مختبر أصغر، الفيزياء نفسها. راسلنا وسنصوغها معك."
+      "نعم. حاسبة الميزانية التفاعلية أعلاه تتيح لك «إشعال» مبلغ جزئي — حتى 10,000 دولار تدرّب 40 طالبًا على عتاد حقيقي. بذرة أصغر، مختبر أصغر، الفيزياء نفسها. تواصل معنا عبر النموذج وسنصوغها معك."
     ),
   },
 ] as const;

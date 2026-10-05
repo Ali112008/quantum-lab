@@ -15,7 +15,6 @@ import {
   BUDGET_CATEGORIES,
   BUDGET_ITEMS,
   BUDGET_SCENARIOS,
-  LAB_EMAIL,
   TOTAL_SEED,
   calculateROI,
 } from "@/lib/data";
@@ -359,17 +358,21 @@ export default function BudgetCalculator() {
                       {fmt(item.cost)}
                     </td>
                     <td className="px-4 py-3.5 text-center">
-                      {/* Adopt-a-line: one mailto per audited item — the
-                          transparency table doubles as a funding menu. */}
-                      <a
-                        href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
-                          `Funding — ${item.resource.en} (${fmt(item.cost)})`
-                        )}`}
+                      {/* Adopt-a-line: every audited item scrolls the funder
+                          straight to the pledge-intent tube — the transparency
+                          table doubles as a funding menu, with zero email. */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("funding-tube")
+                            ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                        }
                         aria-label={t.budget.fundAria(tx(item.resource), fmt(item.cost))}
                         className="inline-flex size-9 items-center justify-center rounded-lg border border-quantum-green/30 bg-quantum-green/5 text-quantum-green/75 opacity-70 transition-all hover:opacity-100 hover:shadow-[0_0_16px_rgba(0,184,148,0.4)] hover:border-quantum-green/60 focus-visible:opacity-100"
                       >
                         <HandCoins className="size-4" aria-hidden="true" />
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 ))}

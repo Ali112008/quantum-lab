@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Send, Loader2, CheckCircle2, Activity, QrCode, Check, Gem, Sparkles, Coins, Share2, Link2, Twitter, Linkedin, MessageCircle } from "lucide-react";
+import { Radio, Send, Loader2, CheckCircle2, Activity, Check, Gem, Sparkles, Share2, Link2, Twitter, Linkedin, MessageCircle } from "lucide-react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import QuantumCard from "@/components/ui/QuantumCard";
 import FundingTube, { PledgePrefill } from "@/components/ui/FundingTube";
@@ -24,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { quantumVariants, viewport } from "@/lib/animations";
 import { useLang } from "@/lib/LanguageProvider";
-import { LAB_EMAIL } from "@/lib/data";
 
 /**
  * SECTION 08 — MAKE CONTACT
@@ -311,10 +309,12 @@ export default function ContactSection() {
                   ))}
                 </ul>
                 <div className="mt-4 grid gap-2">
-                  <a
-                    href={`mailto:${LAB_EMAIL}?subject=${encodeURIComponent(
-                      `Sponsorship — ${tier.name} (${tier.amount})`
-                    )}`}
+                  {/* Zero-email on-ramp: claiming a tier pre-fills the
+                      pledge-intent form inside <FundingTube/> and scrolls to
+                      it — no mailto, no address leakage. */}
+                  <button
+                    type="button"
+                    onClick={() => handleTierPledge(i)}
                     className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border font-heading text-xs font-bold transition-all ${
                       tier.featured
                         ? "border-quantum-amber/60 bg-quantum-amber/15 text-quantum-amber hover:bg-quantum-amber/25 hover:shadow-[0_0_22px_rgba(251,191,36,0.4)]"
@@ -323,49 +323,12 @@ export default function ContactSection() {
                   >
                     <Send className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />
                     {t.contact.tiersCta}
-                  </a>
-                  {/* zero-friction on-ramp: prefill the pledge-intent form */}
-                  <button
-                    type="button"
-                    onClick={() => handleTierPledge(i)}
-                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 font-mono text-[11px] tracking-wide text-quantum-subtle transition-all hover:border-quantum-amber/40 hover:text-quantum-amber"
-                  >
-                    <Coins className="size-3" aria-hidden="true" />
-                    {t.contact.tierPledgeCta}
                   </button>
                 </div>
               </motion.div>
             ))}
           </div>
           <p className="mt-4 text-center text-[11px] text-quantum-subtle/80">{t.contact.tiersNote}</p>
-        </motion.div>
-
-        {/* ══ SCAN-TO-EMAIL — a print-safe bridge: the QR encodes a mailto:
-            so it works on paper, posters and projectors, forever. ══ */}
-        <motion.div
-          variants={quantumVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          className="mx-auto mb-10 flex w-fit items-center gap-4 rounded-2xl border border-white/10 bg-quantum-secondary/60 p-4"
-        >
-          <div className="relative shrink-0 rounded-xl bg-white p-1.5 shadow-[0_0_18px_rgba(0,217,255,0.25)]">
-            <Image
-              src="/images/qr-lab-email.png"
-              alt={t.contact.qrTitle}
-              width={72}
-              height={72}
-              className="size-18"
-            />
-            <span aria-hidden="true" className="absolute inset-0 rounded-xl ring-1 ring-quantum-blue/40" />
-          </div>
-          <div className="max-w-52">
-            <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.22em] text-quantum-blue">
-              <QrCode className="size-3.5" aria-hidden="true" />
-              {t.contact.qrTitle}
-            </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-quantum-subtle">{t.contact.qrCaption}</p>
-          </div>
         </motion.div>
 
         {/* ══ AMPLIFY THE SIGNAL — the viral loop for the pitch itself.
