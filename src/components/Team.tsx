@@ -1,46 +1,75 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import { Mail } from "lucide-react";
+import { motion } from "framer-motion";
 import SectionHeading from "@/components/ui/SectionHeading";
-import QuantumAvatar from "@/components/ui/QuantumAvatar";
-import { TEAM_MEMBERS, LAB_EMAIL, type TeamGroup } from "@/lib/data";
+import { TEAM_MEMBERS, type TeamMember } from "@/lib/data";
 import { useLang } from "@/lib/LanguageProvider";
 import { staggerContainer, scaleIn, quantumVariants, viewport } from "@/lib/animations";
 
-/** Initials for the avatar halo — bra-ket placeholders keep their glyph */
-function initials(name: string) {
-  if (name.includes("⟩")) return name;
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
+/** zero-padded roster index — Q1…Q15, a nod to the 15-qubit register */
+function qubitIndex(i: number) {
+  return `Q${String(i + 1).padStart(2, "0")}`;
 }
 
-type FilterId = TeamGroup | "all";
+function MemberCard({ member, index }: { member: TeamMember; index: number }) {
+  const { tx } = useLang();
+  return (
+    <motion.article
+      layout
+      variants={scaleIn}
+      role="listitem"
+      whileHover={{ y: -8 }}
+      transition={{ type: "spring", stiffness: 260, damping: 24 }}
+      className={`group relative flex flex-col items-center rounded-2xl border bg-quantum-secondary/70 backdrop-blur-sm px-4 py-6 text-center transition-[border-color,box-shadow] duration-300 hover:shadow-[0_16px_50px_-14px_rgba(0,217,255,0.4)] ${
+        member.open
+          ? "border-dashed border-quantum-subtle/40 hover:border-quantum-blue/60"
+          : "border-white/8 hover:border-quantum-blue/40"
+      }`}
+    >
+      {/* roster index — mono chip in the top-left corner */}
+      <span
+        aria-hidden="true"
+        className="absolute left-3 top-3 font-mono text-[10px] tracking-widest text-quantum-subtle/50 transition-colors duration-300 group-hover:text-quantum-blue/70"
+      >
+        {qubitIndex(index)}
+      </span>
 
-const FILTER_IDS: FilterId[] = ["all", "leads", "research", "tech", "ops", "media", "open"];
+      {/* gradient accent bar — the member's color signature (no photos by design) */}
+      <span
+        aria-hidden="true"
+        className={`mb-4 h-1 w-10 rounded-full bg-gradient-to-r ${member.gradient} transition-shadow duration-300 group-hover:shadow-[0_0_16px_rgba(0,217,255,0.5)]`}
+      />
+
+      {member.open ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="absolute inset-1 rounded-xl border border-quantum-blue/15 animate-spin-slow"
+            style={{ borderStyle: "dashed" }}
+          />
+          <h3 className="font-mono text-lg font-bold text-quantum-subtle transition-colors duration-300 group-hover:text-quantum-blue" dir="ltr">
+            {member.name}
+          </h3>
+        </>
+      ) : (
+        <h3 className="font-heading text-sm font-bold leading-snug text-white" dir="ltr">
+          {member.name}
+        </h3>
+      )}
+
+      <p className="mt-1.5 text-[11px] text-quantum-subtle">{tx(member.year)}</p>
+    </motion.article>
+  );
+}
 
 /**
  * SECTION 06 — THE TEAM
  * 15 entangled students: 13 founding members + 2 open seats (|0⟩ / |1⟩).
- * Filterable by discipline, animated re-flow on change.
+ * Deliberately role-free and photo-free — one entangled system of equal
+ * co-founders, names only.
  */
 export default function Team() {
-  const [filter, setFilter] = useState<FilterId>("all");
-  const { t, tx } = useLang();
-
-  const members = useMemo(
-    () =>
-      filter === "all"
-        ? TEAM_MEMBERS
-        : TEAM_MEMBERS.filter((m) => m.group === filter),
-    [filter]
-  );
+  const { t } = useLang();
 
   return (
     <section id="team" className="relative py-24 md:py-32" aria-label={t.misc.teamAria}>
@@ -53,122 +82,19 @@ export default function Team() {
           subtitle={t.team.subtitle}
         />
 
-        {/* discipline filter */}
-        <motion.div
-          variants={quantumVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          className="mb-10 flex flex-wrap justify-center gap-2"
-          role="group"
-          aria-label={t.team.filtersAria}
-        >
-          {FILTER_IDS.map((id) => {
-            const active = filter === id;
-            return (
-              <motion.button
-                key={id}
-                type="button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setFilter(id)}
-                aria-pressed={active}
-                className={`rounded-full border px-4 py-2 font-mono text-xs tracking-wider transition-all ${
-                  active
-                    ? "border-quantum-blue bg-quantum-blue/15 text-quantum-blue shadow-[0_0_18px_rgba(0,217,255,0.3)]"
-                    : "border-white/10 bg-quantum-secondary/60 text-quantum-subtle hover:border-quantum-blue/40 hover:text-white"
-                }`}
-              >
-                {t.team.filters[id]}
-              </motion.button>
-            );
-          })}
-        </motion.div>
-
         <motion.div
           layout
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={viewport}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"
           role="list"
           aria-label={t.team.gridAria}
-          aria-live="polite"
         >
-          <AnimatePresence mode="popLayout">
-            {members.map((member) => (
-              <motion.article
-                layout
-                key={member.name}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                role="listitem"
-                whileHover={{ y: -8 }}
-                className={`group relative flex flex-col items-center rounded-2xl border bg-quantum-secondary/70 backdrop-blur-sm p-5 text-center transition-[border-color,box-shadow] duration-300 hover:shadow-[0_16px_50px_-14px_rgba(0,217,255,0.4)] ${
-                  member.open
-                    ? "border-dashed border-quantum-subtle/40 hover:border-quantum-blue/60"
-                    : "border-white/8 hover:border-quantum-blue/40"
-                }`}
-              >
-                {/* avatar halo — real photo when available, else the seeded
-                    quantum pattern + initials. Adding a photo = drop a file
-                    in public/images/team/ and set member.photo in data.ts. */}
-                <div
-                  className={`relative mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} p-[2px] transition-shadow duration-300 group-hover:shadow-[0_0_24px_rgba(0,217,255,0.45)]`}
-                >
-                  <span className="relative flex size-full items-center justify-center overflow-hidden rounded-full bg-quantum-navy">
-                    {member.photo ? (
-                      <Image
-                        src={member.photo}
-                        alt=""
-                        width={96}
-                        height={96}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        {/* deterministic micro-universe — same name, same pattern */}
-                        <QuantumAvatar name={member.name} gradient={member.gradient} />
-                        <span className="relative z-10 rounded-full bg-quantum-navy/55 px-1 font-mono text-sm font-bold text-white">
-                          {initials(member.name)}
-                        </span>
-                      </>
-                    )}
-                  </span>
-                  {member.open && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -inset-1 rounded-full border border-quantum-blue/30 animate-spin-slow"
-                      style={{ borderStyle: "dashed" }}
-                    />
-                  )}
-                </div>
-
-                <h3 className="font-heading text-sm font-bold text-white leading-snug" dir="ltr">
-                  {member.name}
-                </h3>
-                <p className="mt-1 text-xs font-semibold text-quantum-blue">
-                  {tx(member.role)}
-                </p>
-                <p className="mt-0.5 text-[11px] text-quantum-subtle">{tx(member.year)}</p>
-
-                {/* skills — reveal on hover */}
-                <div className="mt-3 flex max-h-0 flex-wrap justify-center gap-1.5 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-24 group-hover:opacity-100">
-                  {member.skills.map((skill, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full border border-quantum-blue/25 bg-quantum-navy/70 px-2 py-0.5 font-mono text-[10px] text-quantum-blue/90"
-                    >
-                      {tx(skill)}
-                    </span>
-                  ))}
-                </div>
-              </motion.article>
-            ))}
-          </AnimatePresence>
+          {TEAM_MEMBERS.map((member, i) => (
+            <MemberCard key={member.name} member={member} index={i} />
+          ))}
         </motion.div>
 
         <motion.p
@@ -176,28 +102,10 @@ export default function Team() {
           initial="hidden"
           whileInView="visible"
           viewport={viewport}
-          className="mt-8 text-center font-mono text-xs text-quantum-subtle"
+          className="mt-10 text-center font-mono text-xs text-quantum-subtle"
         >
           {t.team.note}
         </motion.p>
-
-        <motion.div
-          variants={quantumVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-          className="mt-6 flex justify-center"
-        >
-          <motion.a
-            href={`mailto:${LAB_EMAIL}?subject=Founding%20Seat%20Application`}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 rounded-xl border border-quantum-purple/50 bg-quantum-purple/10 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-quantum-purple/25 hover:shadow-[0_0_26px_rgba(108,92,231,0.45)]"
-          >
-            <Mail className="size-4" aria-hidden="true" />
-            {t.team.cta}
-          </motion.a>
-        </motion.div>
       </div>
     </section>
   );

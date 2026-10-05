@@ -268,11 +268,8 @@ export interface Copy {
     eyebrow: string;
     title: string;
     subtitle: string;
-    filtersAria: string;
-    filters: Record<string, string>;
     gridAria: string;
     note: string;
-    cta: string;
   };
   faq: {
     eyebrow: string;
@@ -758,20 +755,9 @@ const en: Copy = {
     eyebrow: "SECTION 07 — THE TEAM",
     title: "Entangled Expertise",
     subtitle:
-      "15 students, one wavefunction — physicists, engineers, and mathematicians led by the people who will do the work: the students themselves.",
-    filtersAria: "Filter team members by discipline",
-    filters: {
-      all: "All 15",
-      leads: "Leads",
-      research: "Research",
-      tech: "Tech",
-      ops: "Ops & Events",
-      media: "Media & Design",
-      open: "Open Seats",
-    },
+      "15 students, one wavefunction — 13 founding members and 2 open seats, one entangled system of equal co-founders.",
     gridAria: "Team members",
-    note: "one entangled system — full roster & photos available on request",
-    cta: "Claim an open founding seat",
+    note: "one entangled system — 13 founding members, 2 open seats waiting to collapse",
   },
   faq: {
     eyebrow: "SECTION 08 — FAQ",
@@ -1314,20 +1300,9 @@ const ar: Copy = {
     eyebrow: "القسم 07 — الفريق",
     title: "خبرات متشابكة",
     subtitle:
-      "15 طالبًا في دالة موجية واحدة — فيزيائيون ومهندسون ورياضيون، بقيادة من سيؤدون العمل بأنفسهم: الطلاب.",
-    filtersAria: "تصفية أعضاء الفريق حسب التخصص",
-    filters: {
-      all: "الكل 15",
-      leads: "القيادات",
-      research: "البحث",
-      tech: "التقنية",
-      ops: "العمليات والفعاليات",
-      media: "الإعلام والتصميم",
-      open: "مقاعد شاغرة",
-    },
+      "15 طالبًا في دالة موجية واحدة — 13 عضوًا مؤسِّسًا ومقعدان شاغران، منظومة متشابكة واحدة من مؤسسين متكافئين.",
     gridAria: "أعضاء الفريق",
-    note: "منظومة متشابكة واحدة — القائمة الكاملة والصور متاحة عند الطلب",
-    cta: "احجز مقعدًا مؤسِّسًا شاغرًا",
+    note: "منظومة متشابكة واحدة — 13 عضوًا مؤسِّسًا ومقعدان شاغران بانتظار الانهيار",
   },
   faq: {
     eyebrow: "القسم 08 — الأسئلة الشائعة",

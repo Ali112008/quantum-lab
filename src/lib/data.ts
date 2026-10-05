@@ -12,152 +12,99 @@ import { l, type L10n } from "@/lib/i18n";
 
 /* ------------------------------- Team -------------------------------- */
 
-export type TeamGroup = "leads" | "research" | "tech" | "ops" | "media" | "open";
-
+/**
+ * Roster is deliberately role-free and photo-free: the founding crew is
+ * presented as one entangled system of equal co-founders — names only.
+ */
 export interface TeamMember {
+  /** Proper noun from the founding roster — kept in Latin script */
   name: string;
-  role: L10n;
+  /** e.g. "4th Year · Computer Science" */
   year: L10n;
-  skills: L10n[];
-  /** tailwind gradient classes for the avatar halo */
+  /** tailwind gradient classes for the card accent bar (no photos by design) */
   gradient: string;
-  /** filter group shown in the team section */
-  group: TeamGroup;
   /** open founding seat rendered with dashed border */
   open?: boolean;
-  /**
-   * Optional real photo path (e.g. "/images/team/ali.jpg") — when set,
-   * the Team grid renders this image instead of the generated QuantumAvatar.
-   * Drop files into public/images/team/ and add the path here; nothing else
-   * to change. Until then every member keeps their deterministic avatar.
-   */
-  photo?: string;
 }
 
 const OPEN_SEAT_YEAR = l("Could be you — apply now", "قد تكون أنت — قدّم الآن");
-const OPEN_SEAT_SKILL = l("Apply via email", "قدِّم عبر البريد");
 
 export const TEAM_MEMBERS: TeamMember[] = [
   {
     name: "Ali Mahmoud Ali",
-    role: l("Project Lead", "قائد المشروع"),
     year: l("4th Year · Computer Science", "السنة الرابعة · علوم الحاسب"),
-    skills: [l("Leadership", "القيادة"), l("Quantum Algorithms", "خوارزميات كمومية"), l("Strategy", "استراتيجية")],
     gradient: "from-quantum-blue/80 to-quantum-blue/20",
-    group: "leads",
   },
   {
     name: "Mohamed Raafat Mohamed",
-    role: l("Technical Lead", "قائد تقني"),
     year: l("3rd Year · Physics", "السنة الثالثة · فيزياء"),
-    skills: [l("Qiskit", "Qiskit"), l("Python", "Python"), l("Circuit Design", "تصميم دوائر")],
     gradient: "from-quantum-purple/80 to-quantum-purple/20",
-    group: "tech",
   },
   {
     name: "Elsayed Ramdan Labib",
-    role: l("Research Lead", "قائد البحث"),
     year: l("4th Year · Physics", "السنة الرابعة · فيزياء"),
-    skills: [l("Quantum Theory", "نظرية كمومية"), l("VQE", "VQE"), l("Scientific Writing", "كتابة علمية")],
     gradient: "from-quantum-green/80 to-quantum-green/20",
-    group: "research",
   },
   {
     name: "Basmalla Ahmed Awad",
-    role: l("Education Lead", "قائدة التعليم"),
     year: l("3rd Year · Computer Science", "السنة الثالثة · علوم الحاسب"),
-    skills: [l("Curriculum Design", "تصميم منهج"), l("Qiskit", "Qiskit"), l("Teaching", "تدريس")],
     gradient: "from-quantum-amber/80 to-quantum-amber/20",
-    group: "ops",
   },
   {
     name: "Nada Ehab Ahmed",
-    role: l("Partnerships Lead", "قائدة الشراكات"),
     year: l("4th Year · Communications Eng.", "السنة الرابعة · هندسة اتصالات"),
-    skills: [l("Industry Liaison", "تواصل صناعي"), l("Public Speaking", "إلقاء أمام جمهور")],
     gradient: "from-quantum-blue/80 to-quantum-purple/30",
-    group: "ops",
   },
   {
     name: "Youssef Mohammed Eldabaa",
-    role: l("Quantum Algorithms", "خوارزميات كمومية"),
     year: l("3rd Year · Mathematics", "السنة الثالثة · رياضيات"),
-    skills: [l("QAOA", "QAOA"), l("Linear Algebra", "جبر خطي"), l("Python", "Python")],
     gradient: "from-quantum-purple/80 to-quantum-blue/30",
-    group: "research",
   },
   {
     name: "Salma Mohamed Ghoniem",
-    role: l("Simulation Engineer", "مهندسة محاكاة"),
     year: l("3rd Year · Physics", "السنة الثالثة · فيزياء"),
-    skills: [l("Aer Simulator", "محاكي Aer"), l("NumPy", "NumPy"), l("HPC", "حوسبة عالية الأداء")],
     gradient: "from-quantum-green/80 to-quantum-blue/30",
-    group: "tech",
   },
   {
     name: "Sara Emad Hassan",
-    role: l("Outreach & Media", "تواصل وإعلام"),
     year: l("2nd Year · Computer Science", "السنة الثانية · علوم الحاسب"),
-    skills: [l("Content Creation", "صناعة محتوى"), l("Community", "بناء مجتمع")],
     gradient: "from-quantum-amber/80 to-quantum-red/30",
-    group: "media",
   },
   {
     name: "Shahenda Ahmed Khalil",
-    role: l("Operations Manager", "مديرة عمليات"),
     year: l("4th Year · Physics", "السنة الرابعة · فيزياء"),
-    skills: [l("Logistics", "لوجستيات"), l("Scheduling", "جدولة"), l("Reporting", "تقارير")],
     gradient: "from-quantum-blue/80 to-quantum-green/30",
-    group: "ops",
   },
   {
     name: "Menna Osama Mohammed",
-    role: l("Documentation Lead", "قائدة التوثيق"),
     year: l("3rd Year · Computer Science", "السنة الثالثة · علوم الحاسب"),
-    skills: [l("Technical Writing", "كتابة تقنية"), l("Git", "Git"), l("Docs", "توثيق")],
     gradient: "from-quantum-purple/80 to-quantum-green/30",
-    group: "ops",
   },
   {
     name: "Mohamed Tamer Ismail",
-    role: l("Hardware & Cloud", "عتاد وسحابة"),
     year: l("4th Year · Computer Engineering", "السنة الرابعة · هندسة حاسبات"),
-    skills: [l("AWS Braket", "AWS Braket"), l("IBM Quantum", "IBM Quantum"), l("Linux", "Linux")],
     gradient: "from-quantum-green/80 to-quantum-purple/30",
-    group: "tech",
   },
   {
     name: "Malak Asaad Ismail",
-    role: l("Design Lead", "قائدة التصميم"),
     year: l("2nd Year · Information Systems", "السنة الثانية · نظم معلومات"),
-    skills: [l("UI/UX", "UI/UX"), l("Figma", "Figma"), l("Branding", "هوية بصرية")],
     gradient: "from-quantum-amber/80 to-quantum-purple/30",
-    group: "media",
   },
   {
     name: "Somaia Adel Mohamed",
-    role: l("Events & Workshops", "فعاليات وورش"),
     year: l("3rd Year · Physics", "السنة الثالثة · فيزياء"),
-    skills: [l("Event Planning", "تخطيط فعاليات"), l("Hackathons", "هاكاثونات"), l("Qiskit", "Qiskit")],
     gradient: "from-quantum-red/80 to-quantum-blue/30",
-    group: "ops",
   },
   {
     name: "|0⟩",
-    role: l("Open Founding Seat", "مقعد مؤسِّس شاغر"),
     year: OPEN_SEAT_YEAR,
-    skills: [OPEN_SEAT_SKILL],
     gradient: "from-quantum-subtle/60 to-quantum-subtle/10",
-    group: "open",
     open: true,
   },
   {
     name: "|1⟩",
-    role: l("Open Founding Seat", "مقعد مؤسِّس شاغر"),
     year: OPEN_SEAT_YEAR,
-    skills: [OPEN_SEAT_SKILL],
     gradient: "from-quantum-subtle/60 to-quantum-subtle/10",
-    group: "open",
     open: true,
   },
 ];
